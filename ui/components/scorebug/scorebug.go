@@ -9,7 +9,7 @@ import (
 	lipgloss "github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 
-	"github.com/KevinStirling/scorebug/data"
+	"github.com/KevinStirling/scorebug.sh/data"
 )
 
 type model struct {

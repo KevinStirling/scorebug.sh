@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/KevinStirling/scorebug/ui/components/scorebug"
+	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
