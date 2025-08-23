@@ -1,0 +1,90 @@
+package scorebug
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+
+	tea "github.com/charmbracelet/bubbletea"
+	lipgloss "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
+
+	"github.com/KevinStirling/scorebug/data"
+)
+
+type model struct {
+	scoreBug data.ScoreBug
+	error    error
+}
+
+func NewModel() model {
+	return model{}
+}
+
+func (m model) Init() tea.Cmd {
+	return checkServer
+}
+
+func checkServer() tea.Msg {
+	return data.BuildScoreBug(data.GetGameFeed())
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+
+	case data.ScoreBug:
+		m.scoreBug = data.ScoreBug(msg)
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyCtrlC {
+			return m, tea.Quit
+		}
+	}
+	return m, nil
+
+}
+
+func (m model) View() string {
+	s := fmt.Sprintf("Checking for box score...\n")
+	if &m.scoreBug != nil {
+
+		rows := [][]string{
+			{m.scoreBug.HomeAbbr, m.scoreBug.AwayAbbr, strconv.Itoa(m.scoreBug.Outs) + " OUTS", "[" + m.scoreBug.On2B + "]"},
+			{strconv.Itoa(m.scoreBug.HomeRuns), strconv.Itoa(m.scoreBug.AwayRuns), strconv.Itoa(m.scoreBug.Balls) + "-" + strconv.Itoa(m.scoreBug.Strikes), "[" + m.scoreBug.On3B + "] _ [" + m.scoreBug.On1B + "]", m.scoreBug.InningSt + strconv.Itoa(m.scoreBug.Inning)},
+		}
+		var (
+			purple = lipgloss.Color("99")
+			// gray   = lipgloss.Color("245")
+			cellStyle = lipgloss.NewStyle().Padding(0, 1)
+		)
+		t := table.New().
+			Border(lipgloss.NormalBorder()).
+			BorderStyle(lipgloss.NewStyle().Foreground(purple)).
+			StyleFunc(func(row, col int) lipgloss.Style {
+				switch col {
+				case 0:
+					return cellStyle.Align(lipgloss.Center)
+				case 1:
+					return cellStyle.Align(lipgloss.Center)
+				case 2:
+					return cellStyle.Align(lipgloss.Center)
+				case 3:
+					return cellStyle.Align(lipgloss.Center)
+				case 4:
+					return cellStyle.Align(lipgloss.Center)
+				}
+				return cellStyle
+			}).
+			Rows(rows...)
+
+		s = fmt.Sprintf("%s", t)
+	}
+
+	return "\n" + s + "\n"
+}
+
+func main() {
+	if _, err := tea.NewProgram(model{}).Run(); err != nil {
+		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
+		os.Exit(1)
+	}
+}
