@@ -1,3 +1,3 @@
 dev:
-	go run cmd/main.go
+	go run cmd/scorebug/main.go
 

@@ -1,4 +1,4 @@
-module github.com/KevinStirling/scorebug
+module github.com/KevinStirling/scorebug.sh
 
 go 1.25
 
