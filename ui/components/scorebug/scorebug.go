@@ -2,7 +2,6 @@ package scorebug
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,16 +11,16 @@ import (
 	"github.com/KevinStirling/scorebug.sh/data"
 )
 
-type model struct {
+type Model struct {
 	scoreBug data.ScoreBug
 	error    error
 }
 
-func NewModel() model {
-	return model{}
+func NewModel() Model {
+	return Model{}
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return checkServer
 }
 
@@ -29,7 +28,7 @@ func checkServer() tea.Msg {
 	return data.BuildScoreBug(data.GetGameFeed())
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case data.ScoreBug:
@@ -43,7 +42,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	s := fmt.Sprintf("Checking for box score...\n")
 	if &m.scoreBug != nil {
 
@@ -82,9 +81,9 @@ func (m model) View() string {
 	return "\n" + s + "\n"
 }
 
-func main() {
-	if _, err := tea.NewProgram(model{}).Run(); err != nil {
-		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
-		os.Exit(1)
-	}
-}
+// func main() {
+// 	if _, err := tea.NewProgram(Model{}).Run(); err != nil {
+// 		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
+// 		os.Exit(1)
+// 	}
+// }

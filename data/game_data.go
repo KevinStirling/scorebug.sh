@@ -73,8 +73,8 @@ type ScoreBug struct {
 	On3B     string
 }
 
-func GetGameFeed() Feed {
-	resp, _ := http.Get("https://statsapi.mlb.com/api/v1.1/game/776796/feed/live")
+func GetGameFeed(url string) Feed {
+	resp, _ := http.Get(url)
 	defer resp.Body.Close()
 
 	var feed Feed
@@ -84,24 +84,6 @@ func GetGameFeed() Feed {
 }
 
 func BuildScoreBug(f Feed) ScoreBug {
-	setRunner := func(s []int, i int) string {
-		if i >= 0 && i < len(s) && s[i] != 0 {
-			return "●"
-		}
-		return " "
-	}
-
-	setInningState := func(state string) string {
-		switch state {
-		case "Top":
-			return "↑"
-		case "Bottom":
-			return "↓"
-		default:
-			return ""
-		}
-	}
-
 	return ScoreBug{
 		HomeAbbr: f.GameData.Teams.Home.Abbreviation,
 		AwayAbbr: f.GameData.Teams.Away.Abbreviation,
@@ -112,8 +94,8 @@ func BuildScoreBug(f Feed) ScoreBug {
 		Outs:     f.LiveData.Linescore.Outs,
 		Balls:    f.LiveData.Plays.CurrentPlay.Count.Balls,
 		Strikes:  f.LiveData.Plays.CurrentPlay.Count.Strikes,
-		On1B:     setRunner(f.LiveData.Plays.CurrentPlay.RunnerIndex, 1),
-		On2B:     setRunner(f.LiveData.Plays.CurrentPlay.RunnerIndex, 2),
-		On3B:     setRunner(f.LiveData.Plays.CurrentPlay.RunnerIndex, 3),
+		On1B:     setRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 1),
+		On2B:     setRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 2),
+		On3B:     setRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 3),
 	}
 }
