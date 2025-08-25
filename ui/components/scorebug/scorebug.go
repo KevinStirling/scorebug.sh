@@ -11,6 +11,12 @@ import (
 	"github.com/KevinStirling/scorebug.sh/data"
 )
 
+var (
+	//TODO hard coded game feed for testing render, remove if this package is used for final renders
+	statsUrl   = "https://statsapi.mlb.com"
+	gamePkLink = "https://statsapi.mlb.com/api/v1.1/game/776796/feed/live"
+)
+
 type Model struct {
 	scoreBug data.ScoreBug
 	error    error
@@ -25,7 +31,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func checkServer() tea.Msg {
-	return data.BuildScoreBug(data.GetGameFeed())
+	return data.BuildScoreBug(data.GetGameFeed(statsUrl + gamePkLink))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
