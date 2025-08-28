@@ -7,7 +7,7 @@ func setRunnerState(s []int, i int) string {
 	return " "
 }
 
-func setInningState(state string) string {
+func setInningArrow(state string) string {
 	switch state {
 	case "Top":
 		return "↑"
