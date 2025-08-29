@@ -61,23 +61,29 @@ type TodaysGames struct {
 	} `json:"dates"`
 }
 
+type Game struct {
+	Link        string
+	Status      string
+	HomeAbbr    string
+	AwayAbbr    string
+	Batter      string
+	Pitcher     string
+	BatterAvg   string
+	PitchCount  int
+	HomeRuns    int
+	AwayRuns    int
+	Inning      int
+	InningArrow string
+	InningSt    string
+	Outs        int
+	Balls       int
+	Strikes     int
+	On1B        string
+	On2B        string
+	On3B        string
+}
 type Schedule struct {
-	Games []struct {
-		Link     string
-		Status   string
-		HomeAbbr string
-		AwayAbbr string
-		HomeRuns int
-		AwayRuns int
-		Inning   int
-		InningSt string
-		Outs     int
-		Balls    int
-		Strikes  int
-		On1B     string
-		On2B     string
-		On3B     string
-	}
+	Games []Game
 }
 
 func GetSchedule() TodaysGames {
@@ -95,41 +101,52 @@ func BuildSchedule(t TodaysGames) Schedule {
 	for _, d := range t.Dates {
 		for _, g := range d.Games {
 			row := struct {
-				Link     string
-				Status   string
-				HomeAbbr string
-				AwayAbbr string
-				HomeRuns int
-				AwayRuns int
-				Inning   int
-				InningSt string
-				Outs     int
-				Balls    int
-				Strikes  int
-				On1B     string
-				On2B     string
-				On3B     string
+				Link        string
+				Status      string
+				HomeAbbr    string
+				AwayAbbr    string
+				Batter      string
+				Pitcher     string
+				BatterAvg   string
+				PitchCount  int
+				HomeRuns    int
+				AwayRuns    int
+				Inning      int
+				InningArrow string
+				InningSt    string
+				Outs        int
+				Balls       int
+				Strikes     int
+				On1B        string
+				On2B        string
+				On3B        string
 			}{
-				Link:     g.Link,
-				Status:   g.Status.AbstractGameState,
-				HomeAbbr: g.Teams.Home.Team.Abbreviation,
-				AwayAbbr: g.Teams.Away.Team.Abbreviation,
-				HomeRuns: g.Linescore.Teams.Home.Runs,
-				AwayRuns: g.Linescore.Teams.Away.Runs,
-				Inning:   g.Linescore.CurrentInning,
-				InningSt: setInningState(g.Linescore.InningState),
-				Outs:     g.Linescore.Outs,
-				Balls:    g.Linescore.Balls,
-				Strikes:  g.Linescore.Strikes,
-				On1B:     " ",
-				On2B:     " ",
-				On3B:     " ",
+				Link:        g.Link,
+				Status:      g.Status.AbstractGameState,
+				HomeAbbr:    g.Teams.Home.Team.Abbreviation,
+				AwayAbbr:    g.Teams.Away.Team.Abbreviation,
+				HomeRuns:    g.Linescore.Teams.Home.Runs,
+				AwayRuns:    g.Linescore.Teams.Away.Runs,
+				Inning:      g.Linescore.CurrentInning,
+				InningArrow: setInningArrow(g.Linescore.InningState),
+				InningSt:    g.Linescore.InningState,
+				Outs:        g.Linescore.Outs,
+				Balls:       g.Linescore.Balls,
+				Strikes:     g.Linescore.Strikes,
+				On1B:        " ",
+				On2B:        " ",
+				On3B:        " ",
 			}
 			if row.Status == "Live" {
 				feed := GetGameFeed(statsUrl + row.Link)
+				bp := getCurrentBP(feed)
 				row.On1B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 1)
 				row.On2B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 2)
 				row.On3B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 3)
+				row.Batter = bp.BatterName
+				row.Pitcher = bp.PitcherName
+				row.BatterAvg = bp.BatterAvg
+				row.PitchCount = bp.PitchCount
 			}
 			s.Games = append(s.Games, row)
 		}
