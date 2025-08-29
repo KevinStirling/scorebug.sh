@@ -58,11 +58,22 @@ func (m Model) View() string {
 }
 
 func renderBp(g data.Game, isHome bool) string {
-	//TODO yeah this aint workin
-	if strings.ToLower(g.InningSt) == "top" && !isHome {
-		return fmt.Sprintf("%s, %s", g.Batter, g.BatterAvg)
-	} else {
-		return fmt.Sprintf("%s, P: %s", g.Pitcher, g.PitchCount)
+	var side = strings.ToLower(g.InningSt)
+	switch side {
+	case "top":
+		if isHome {
+			return fmt.Sprintf("%s, P: %d", g.Pitcher, g.PitchCount)
+		} else {
+			return fmt.Sprintf("%s, %s", g.Batter, g.BatterAvg)
+		}
+	case "bottom":
+		if !isHome {
+			return fmt.Sprintf("%s, P: %d", g.Pitcher, g.PitchCount)
+		} else {
+			return fmt.Sprintf("%s, %s", g.Batter, g.BatterAvg)
+		}
+	default:
+		return ""
 	}
 }
 
@@ -72,9 +83,21 @@ func renderSchedule(g data.Schedule) string {
 		//TODO put this in a dedicated "render scorebug" func so it can be used by other commands
 		for _, g := range g.Games {
 			rows := [][]string{
-				{g.HomeAbbr, g.AwayAbbr, strconv.Itoa(g.Outs) + " OUTS", "[" + g.On2B + "]"},
-				{strconv.Itoa(g.HomeRuns), strconv.Itoa(g.AwayRuns), strconv.Itoa(g.Balls) + "-" + strconv.Itoa(g.Strikes), "[" + g.On3B + "] _ [" + g.On1B + "]", g.InningSt + strconv.Itoa(g.Inning)},
-				{renderBp(g, true), renderBp(g, false)},
+				// move this annoymous func out of here, not readable enough
+				{g.HomeAbbr, g.AwayAbbr, "[" + g.On2B + "]", func() string {
+					if g.InningSt == "Top" {
+						return g.InningArrow
+					}
+					return ""
+				}()}, {strconv.Itoa(g.HomeRuns), strconv.Itoa(g.AwayRuns), "[" + g.On3B + "] _ [" + g.On1B + "]", strconv.Itoa(g.Inning)},
+				{renderBp(g, true), renderBp(g, false),
+					fmt.Sprintf("%s   %s", strconv.Itoa(g.Balls)+"-"+strconv.Itoa(g.Strikes), strconv.Itoa(g.Outs)+" OUTS"),
+					func() string {
+						if g.InningSt == "Bottom" {
+							return g.InningArrow
+						}
+						return ""
+					}()},
 			}
 			var (
 				purple    = lipgloss.Color("99")
@@ -84,7 +107,13 @@ func renderSchedule(g data.Schedule) string {
 				Width(69).
 				Border(lipgloss.NormalBorder()).
 				BorderStyle(lipgloss.NewStyle().Foreground(purple)).
-				StyleFunc(func(row, col int) lipgloss.Style { return cellStyle.Align(lipgloss.Center) }).
+				StyleFunc(func(row, col int) lipgloss.Style {
+					switch col {
+					case 3:
+						return cellStyle.Width(3)
+					}
+					return cellStyle.Align(lipgloss.Center)
+				}).
 				Rows(rows...)
 			s += fmt.Sprintf("%s\n", t)
 		}

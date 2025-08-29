@@ -130,9 +130,6 @@ func getCurrentBP(f Feed) CurrentBP {
 
 	keyB, keyP := playerKey(b.Id), playerKey(p.Id)
 
-	bp.BatterAvg = keyB
-	bp.PitcherName = keyP
-
 	teams := []map[string]Player{f.LiveData.Boxscore.Teams.Home.Players, f.LiveData.Boxscore.Teams.Away.Players}
 
 	for _, pm := range teams {
