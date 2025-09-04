@@ -126,7 +126,16 @@ func getCurrentBP(f Feed) CurrentBP {
 	b := f.LiveData.Plays.CurrentPlay.MatchUp.Batter
 	p := f.LiveData.Plays.CurrentPlay.MatchUp.Pitcher
 
-	bp.BatterName, bp.PitcherName = strings.Split(b.FullName, " ")[1], strings.Split(p.FullName, " ")[1]
+	splitName := func(name string) string {
+		s := strings.Split(name, " ")
+		if len(s) >= 2 {
+			return s[1]
+		}
+
+		return name
+	}
+
+	bp.BatterName, bp.PitcherName = splitName(b.FullName), splitName(p.FullName)
 
 	keyB, keyP := playerKey(b.Id), playerKey(p.Id)
 

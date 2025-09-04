@@ -1,9 +1,11 @@
 package data
 
 func SetRunnerState(s []int, base int) string {
-	for i := range s {
-		if s[i] == base {
-			return "●"
+	if len(s) != 0 {
+		for _, v := range s {
+			if v == base {
+				return "●"
+			}
 		}
 	}
 	return " "
