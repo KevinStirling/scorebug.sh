@@ -1,8 +1,10 @@
 package data
 
-func setRunnerState(s []int, i int) string {
-	if i >= 0 && i < len(s) && s[i] != 0 {
-		return "●"
+func SetRunnerState(s []int, base int) string {
+	for i := range s {
+		if s[i] == base {
+			return "●"
+		}
 	}
 	return " "
 }

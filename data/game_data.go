@@ -175,8 +175,8 @@ func BuildScoreBug(f Feed) ScoreBug {
 		Outs:     f.LiveData.Linescore.Outs,
 		Balls:    f.LiveData.Plays.CurrentPlay.Count.Balls,
 		Strikes:  f.LiveData.Plays.CurrentPlay.Count.Strikes,
-		On1B:     setRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 1),
-		On2B:     setRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 2),
-		On3B:     setRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 3),
+		On1B:     SetRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 1),
+		On2B:     SetRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 2),
+		On3B:     SetRunnerState(f.LiveData.Plays.CurrentPlay.RunnerIndex, 3),
 	}
 }

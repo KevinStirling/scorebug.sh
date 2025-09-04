@@ -137,12 +137,12 @@ func BuildSchedule(t TodaysGames) Schedule {
 				On2B:        " ",
 				On3B:        " ",
 			}
-			if row.Status == "Live" {
+			if row.Status != "Live" {
 				feed := GetGameFeed(statsUrl + row.Link)
 				bp := getCurrentBP(feed)
-				row.On1B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 1)
-				row.On2B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 2)
-				row.On3B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 3)
+				row.On1B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 1)
+				row.On2B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 2)
+				row.On3B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 3)
 				row.Batter = bp.BatterName
 				row.Pitcher = bp.PitcherName
 				row.BatterAvg = bp.BatterAvg
