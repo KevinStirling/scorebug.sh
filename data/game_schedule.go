@@ -137,7 +137,7 @@ func BuildSchedule(t TodaysGames) Schedule {
 				On2B:        " ",
 				On3B:        " ",
 			}
-			if row.Status != "Live" {
+			if row.Status == "Live" {
 				feed := GetGameFeed(statsUrl + row.Link)
 				bp := getCurrentBP(feed)
 				row.On1B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 1)
