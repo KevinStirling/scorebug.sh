@@ -13,11 +13,11 @@ func TestSetRunnerState(t *testing.T) {
 		Base    int
 		Desired string
 	}{
-		{"RunnerOnFirst", []int{1}, 1, "●"},
-		{"RunnerOnSecond", []int{2}, 2, "●"},
-		{"RunnerOnThird", []int{3}, 3, "●"},
-		{"NoRunner", []int{}, 1, " "},
-		{"WrongBase", []int{2}, 1, " "},
+		{"RunnerOnFirst", []int{1}, 1, "◆"},
+		{"RunnerOnSecond", []int{2}, 2, "◆"},
+		{"RunnerOnThird", []int{3}, 3, "◆"},
+		{"NoRunner", []int{}, 1, "◇"},
+		{"WrongBase", []int{2}, 1, "◇"},
 	}
 
 	for i := range cases {

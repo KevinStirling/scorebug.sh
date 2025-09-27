@@ -7,9 +7,15 @@ import (
 	"time"
 
 	"github.com/KevinStirling/scorebug.sh/data"
+	"github.com/KevinStirling/scorebug.sh/ui/screen"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+)
+
+const (
+	SB_WIDTH  = 58
+	SB_HEIGHT = 5
 )
 
 type Model struct {
@@ -54,7 +60,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return "\n" + renderSchedule(m.games) + "\n"
+	return renderSchedule(m.games)
 }
 
 func renderBp(g data.Game, isHome bool) string {
@@ -78,24 +84,29 @@ func renderBp(g data.Game, isHome bool) string {
 }
 
 func renderSchedule(g data.Schedule) string {
-	var s string
+	// determine the terminal dimensions, add 1 to width & height since table lines are not included in the render
+	gCols, gRows, _, err := screen.CalculateScorebugs(SB_WIDTH+1, SB_HEIGHT+1)
+	if err != nil {
+		fmt.Printf("Error setting scorebug grid size")
+	}
+	var bugCells [][]string
 	if len(g.Games) > 0 {
-		//TODO put this in a dedicated "render scorebug" func so it can be used by other commands
-		for _, g := range g.Games {
+		for _, game := range g.Games {
+			// if game.Status == "Live" {
 			var rows [][]string
 			rows = [][]string{
-				// move this annoymous func out of here, not readable enough
-				{g.HomeAbbr, g.AwayAbbr, g.On2B, data.SetOut(g.Outs, 1), func() string {
-					if g.InningSt == "Top" {
-						return g.InningArrow
+				{game.HomeAbbr, game.AwayAbbr, game.On2B, data.SetOut(game.Outs, 1), func() string {
+					if game.InningSt == "Top" {
+						return game.InningArrow
 					}
 					return ""
-				}()}, {strconv.Itoa(g.HomeRuns), strconv.Itoa(g.AwayRuns), g.On3B + " - " + g.On1B, data.SetOut(g.Outs, 2), strconv.Itoa(g.Inning)},
-				{renderBp(g, true), renderBp(g, false),
-					fmt.Sprintf("%s", strconv.Itoa(g.Balls)+"-"+strconv.Itoa(g.Strikes)), data.SetOut(g.Outs, 3),
+				}()},
+				{strconv.Itoa(game.HomeRuns), strconv.Itoa(game.AwayRuns), game.On3B + " - " + game.On1B, data.SetOut(game.Outs, 2), strconv.Itoa(game.Inning)},
+				{renderBp(game, true), renderBp(game, false),
+					fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)), data.SetOut(game.Outs, 3),
 					func() string {
-						if g.InningSt == "Bottom" {
-							return g.InningArrow
+						if game.InningSt == "Bottom" {
+							return game.InningArrow
 						}
 						return ""
 					}()},
@@ -106,7 +117,8 @@ func renderSchedule(g data.Schedule) string {
 				outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
 			)
 			t := table.New().
-				Width(58).
+				Width(SB_WIDTH).
+				Height(SB_HEIGHT).
 				Border(lipgloss.NormalBorder()).
 				BorderStyle(lipgloss.NewStyle().Foreground(purple)).
 				StyleFunc(func(row, col int) lipgloss.Style {
@@ -121,9 +133,36 @@ func renderSchedule(g data.Schedule) string {
 					return cellStyle.Align(lipgloss.Center)
 				}).
 				Rows(rows...)
-			// TODO Use JoinHorizonal and JoinVertical in combination with putting the
-			// scorebugs in slices (one for each game status) to format them easier
-			s += fmt.Sprintf("%s\n", t)
+			bugStr := fmt.Sprintf("%s", t)
+			lines := strings.Split(bugStr, "\n")
+			if len(lines) > 0 && lines[len(lines)-1] == "" {
+				lines = lines[:len(lines)-1]
+			}
+			bugCells = append(bugCells, lines)
+			// }
+		}
+	}
+	var s string
+	totalCells := gCols * gRows
+	blankBug := make([]string, SB_HEIGHT)
+	blankLine := strings.Repeat(" ", SB_WIDTH)
+	for i := 0; i < SB_HEIGHT; i++ {
+		blankBug[i] = blankLine
+	}
+	for len(bugCells) < totalCells {
+		bugCells = append(bugCells, blankBug)
+	}
+	for row := 0; row < gRows; row++ {
+		for lineIdx := 0; lineIdx < SB_HEIGHT; lineIdx++ {
+			var rowLine string
+			for col := 0; col < gCols; col++ {
+				cellIndex := row*gCols + col
+				rowLine += bugCells[cellIndex][lineIdx]
+				if col < gCols-1 {
+					rowLine += " "
+				}
+			}
+			s += rowLine + "\n"
 		}
 	}
 	return s

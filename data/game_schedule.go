@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
-
-	"github.com/charmbracelet/log"
 )
 
 var (
@@ -41,7 +38,18 @@ type TodaysGames struct {
 				Balls         int    `json:"balls"`
 				Strikes       int    `json:"strikes"`
 				Outs          int    `json:"outs"`
-				Teams         struct {
+				Offense       struct {
+					First *struct {
+						ID int
+					} `json:"first"`
+					Second *struct {
+						ID int
+					} `json:"second"`
+					Third *struct {
+						ID int
+					} `json:"third"`
+				}
+				Teams struct {
 					Home struct {
 						Runs int `json:"runs"`
 					} `json:"home"`
@@ -141,19 +149,10 @@ func BuildSchedule(t TodaysGames) Schedule {
 				On3B:        "◇",
 			}
 			if row.Status == "Live" {
-				lf, _ := os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
-				log.SetOutput(lf)
-				log.SetFormatter(log.JSONFormatter) // Use JSON format
 				feed := GetGameFeed(statsUrl + row.Link)
-				log.Debugf("RunnerIndex for game %s : %d", statsUrl+row.Link, len(feed.LiveData.Plays.CurrentPlay.RunnerIndex))
 				bp := getCurrentBP(feed)
 				if feed.LiveData.Plays.CurrentPlay.RunnerIndex != nil {
-					// Need to use linescore.offense.first/second/third for baserunners, though they are
-					// not always populated.
-					// TODO create a util func to support rendering the base runners
-					row.On1B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 1)
-					row.On2B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 2)
-					row.On3B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 3)
+					row.On1B, row.On2B, row.On3B = SetBaseRunner(feed)
 				}
 				row.Batter = bp.BatterName
 				row.Pitcher = bp.PitcherName
