@@ -92,55 +92,58 @@ func renderSchedule(g data.Schedule) string {
 	var bugCells [][]string
 	if len(g.Games) > 0 {
 		for _, game := range g.Games {
-			// if game.Status == "Live" {
-			var rows [][]string
-			rows = [][]string{
-				{game.HomeAbbr, game.AwayAbbr, game.On2B, data.SetOut(game.Outs, 1), func() string {
-					if game.InningSt == "Top" {
-						return game.InningArrow
-					}
-					return ""
-				}()},
-				{strconv.Itoa(game.HomeRuns), strconv.Itoa(game.AwayRuns), game.On3B + " - " + game.On1B, data.SetOut(game.Outs, 2), strconv.Itoa(game.Inning)},
-				{renderBp(game, true), renderBp(game, false),
-					fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)), data.SetOut(game.Outs, 3),
-					func() string {
-						if game.InningSt == "Bottom" {
+			if game.Status == "Live" {
+				var rows [][]string
+				rows = [][]string{
+					{game.HomeAbbr, game.AwayAbbr, game.On2B, data.SetOut(game.Outs, 1), func() string {
+						if game.InningSt == "Top" {
 							return game.InningArrow
 						}
 						return ""
 					}()},
+					{strconv.Itoa(game.HomeRuns), strconv.Itoa(game.AwayRuns), game.On3B + " - " + game.On1B, data.SetOut(game.Outs, 2), strconv.Itoa(game.Inning)},
+					{renderBp(game, true), renderBp(game, false),
+						fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)), data.SetOut(game.Outs, 3),
+						func() string {
+							if game.InningSt == "Bottom" {
+								return game.InningArrow
+							}
+							return ""
+						}()},
+				}
+				var (
+					purple    = lipgloss.Color("99")
+					cellStyle = lipgloss.NewStyle().Padding(0, 1)
+					outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
+				)
+				t := table.New().
+					Width(SB_WIDTH).
+					Height(SB_HEIGHT).
+					Border(lipgloss.NormalBorder()).
+					BorderStyle(lipgloss.NewStyle().Foreground(purple)).
+					StyleFunc(func(row, col int) lipgloss.Style {
+						switch col {
+						case 2:
+							return lipgloss.NewStyle().Width(9).Align(lipgloss.Center)
+						case 3:
+							return outsCol
+						case 4:
+							return cellStyle.Width(3)
+						}
+						return cellStyle.Align(lipgloss.Center)
+					}).
+					Rows(rows...)
+				bugStr := fmt.Sprintf("%s", t)
+				lines := strings.Split(bugStr, "\n")
+				if len(lines) > 0 && lines[len(lines)-1] == "" {
+					lines = lines[:len(lines)-1]
+				}
+				bugCells = append(bugCells, lines)
 			}
-			var (
-				purple    = lipgloss.Color("99")
-				cellStyle = lipgloss.NewStyle().Padding(0, 1)
-				outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
-			)
-			t := table.New().
-				Width(SB_WIDTH).
-				Height(SB_HEIGHT).
-				Border(lipgloss.NormalBorder()).
-				BorderStyle(lipgloss.NewStyle().Foreground(purple)).
-				StyleFunc(func(row, col int) lipgloss.Style {
-					switch col {
-					case 2:
-						return lipgloss.NewStyle().Width(9).Align(lipgloss.Center)
-					case 3:
-						return outsCol
-					case 4:
-						return cellStyle.Width(3)
-					}
-					return cellStyle.Align(lipgloss.Center)
-				}).
-				Rows(rows...)
-			bugStr := fmt.Sprintf("%s", t)
-			lines := strings.Split(bugStr, "\n")
-			if len(lines) > 0 && lines[len(lines)-1] == "" {
-				lines = lines[:len(lines)-1]
-			}
-			bugCells = append(bugCells, lines)
-			// }
 		}
+	}
+	if len(bugCells) == 0 {
+		return "no live games :("
 	}
 	var s string
 	totalCells := gCols * gRows
