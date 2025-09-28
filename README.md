@@ -12,7 +12,7 @@ Live MLB scores in your terminal
 Right now only a very basic command `scorebug` is available. Running this command in your terminal will give you all games scheduled for the current day.
 
 
-# Installaion
+# Installation
 
 Go toolchain
 ```
