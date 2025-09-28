@@ -2,6 +2,7 @@
 [![Go](https://github.com/KevinStirling/scorebug.sh/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/KevinStirling/scorebug.sh/actions/workflows/go.yml)
 
 Live MLB scores in your terminal
+
 <img width="750" src="./sb_preview.png" />
 
 
