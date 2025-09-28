@@ -38,7 +38,18 @@ type TodaysGames struct {
 				Balls         int    `json:"balls"`
 				Strikes       int    `json:"strikes"`
 				Outs          int    `json:"outs"`
-				Teams         struct {
+				Offense       struct {
+					First *struct {
+						ID int
+					} `json:"first"`
+					Second *struct {
+						ID int
+					} `json:"second"`
+					Third *struct {
+						ID int
+					} `json:"third"`
+				}
+				Teams struct {
 					Home struct {
 						Runs int `json:"runs"`
 					} `json:"home"`
@@ -133,16 +144,16 @@ func BuildSchedule(t TodaysGames) Schedule {
 				Outs:        g.Linescore.Outs,
 				Balls:       g.Linescore.Balls,
 				Strikes:     g.Linescore.Strikes,
-				On1B:        " ",
-				On2B:        " ",
-				On3B:        " ",
+				On1B:        "◇",
+				On2B:        "◇",
+				On3B:        "◇",
 			}
 			if row.Status == "Live" {
 				feed := GetGameFeed(statsUrl + row.Link)
 				bp := getCurrentBP(feed)
-				row.On1B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 1)
-				row.On2B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 2)
-				row.On3B = setRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 3)
+				if feed.LiveData.Plays.CurrentPlay.RunnerIndex != nil {
+					row.On1B, row.On2B, row.On3B = SetBaseRunner(feed)
+				}
 				row.Batter = bp.BatterName
 				row.Pitcher = bp.PitcherName
 				row.BatterAvg = bp.BatterAvg
