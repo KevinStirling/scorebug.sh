@@ -128,7 +128,7 @@ func renderSchedule(g data.Schedule) string {
 						case 3:
 							return outsCol
 						case 4:
-							return cellStyle.Width(3)
+							return lipgloss.NewStyle().Width(3).Align(lipgloss.Center)
 						}
 						return cellStyle.Align(lipgloss.Center)
 					}).
