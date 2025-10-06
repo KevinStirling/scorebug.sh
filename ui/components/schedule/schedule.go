@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/KevinStirling/scorebug.sh/data"
-	"github.com/KevinStirling/scorebug.sh/ui/screen"
+	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
@@ -19,11 +19,25 @@ const (
 )
 
 type Model struct {
-	games data.Schedule
-	err   error
+	games     data.Schedule
+	paginator paginator.Model
+	err       error
 }
 
-func NewModel() Model { return Model{} }
+func NewModel() Model {
+	games := data.BuildSchedule(data.GetSchedule())
+	p := paginator.New()
+	p.Type = paginator.Dots
+	// might want to use CalculateScorebug's row count for the per page
+	p.PerPage = 10
+	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
+	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
+	p.SetTotalPages(len(games.Games))
+	return Model{
+		paginator: p,
+		games:     games,
+	}
+}
 
 type tickMsg time.Time
 
@@ -42,6 +56,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 
 	case data.Schedule:
@@ -52,15 +67,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(checkServer(), tickAfter(10*time.Second))
 
 	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC {
+		switch msg.String() {
+		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
 		}
 	}
-	return m, nil
+	m.paginator, cmd = m.paginator.Update(msg)
+	return m, cmd
 }
 
 func (m Model) View() string {
-	return renderSchedule(m.games)
+	// paginate
+	// TODO: change this to pull from m.Games, and handle the rendering of each score bug to add it to a list
+	// this will simploify a lot of this
+	g := renderSchedule(m.games)
+	var b strings.Builder
+	b.WriteString("\n Games \n\n")
+	start, end := m.paginator.GetSliceBounds(len(g))
+	for _, item := range g[start:end] {
+		b.WriteString("\n" + item + "\n")
+	}
+	b.WriteString(m.paginator.View())
+	b.WriteString("\n\n  h/l ←/→ page • q: quit\n")
+	return b.String()
 }
 
 func renderBp(g data.Game, isHome bool) string {
@@ -83,90 +112,89 @@ func renderBp(g data.Game, isHome bool) string {
 	}
 }
 
-func renderSchedule(g data.Schedule) string {
+func renderSchedule(g data.Schedule) []string {
 	// determine the terminal dimensions, add 1 to width & height since table lines are not included in the render
-	gCols, gRows, _, err := screen.CalculateScorebugs(SB_WIDTH+1, SB_HEIGHT+1)
-	if err != nil {
-		fmt.Printf("Error setting scorebug grid size")
-	}
-	var bugCells [][]string
+	// may want to move the shaping of this data into a grid into a view specific function
+	// gCols := 1
+	// _, gRows, _, err := screen.CalculateScorebugs(SB_WIDTH+1, SB_HEIGHT+1)
+	// if err != nil {
+	// 	fmt.Printf("Error setting scorebug grid size")
+	// }
+	var bugCells []string
 	if len(g.Games) > 0 {
 		for _, game := range g.Games {
-			if game.Status == "Live" {
-				var rows [][]string
-				rows = [][]string{
-					{game.HomeAbbr, game.AwayAbbr, game.On2B, data.SetOut(game.Outs, 1), func() string {
-						if game.InningSt == "Top" {
+			var rows [][]string
+			rows = [][]string{
+				{game.HomeAbbr, game.AwayAbbr, game.On2B, data.SetOut(game.Outs, 1), func() string {
+					if game.InningSt == "Top" {
+						return game.InningArrow
+					}
+					return ""
+				}()},
+				{strconv.Itoa(game.HomeRuns), strconv.Itoa(game.AwayRuns), game.On3B + " - " + game.On1B, data.SetOut(game.Outs, 2), strconv.Itoa(game.Inning)},
+				{renderBp(game, true), renderBp(game, false),
+					fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)), data.SetOut(game.Outs, 3),
+					func() string {
+						if game.InningSt == "Bottom" {
 							return game.InningArrow
 						}
 						return ""
 					}()},
-					{strconv.Itoa(game.HomeRuns), strconv.Itoa(game.AwayRuns), game.On3B + " - " + game.On1B, data.SetOut(game.Outs, 2), strconv.Itoa(game.Inning)},
-					{renderBp(game, true), renderBp(game, false),
-						fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)), data.SetOut(game.Outs, 3),
-						func() string {
-							if game.InningSt == "Bottom" {
-								return game.InningArrow
-							}
-							return ""
-						}()},
-				}
-				var (
-					purple    = lipgloss.Color("99")
-					cellStyle = lipgloss.NewStyle().Padding(0, 1)
-					outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
-				)
-				t := table.New().
-					Width(SB_WIDTH).
-					Height(SB_HEIGHT).
-					Border(lipgloss.NormalBorder()).
-					BorderStyle(lipgloss.NewStyle().Foreground(purple)).
-					StyleFunc(func(row, col int) lipgloss.Style {
-						switch col {
-						case 2:
-							return lipgloss.NewStyle().Width(9).Align(lipgloss.Center)
-						case 3:
-							return outsCol
-						case 4:
-							return lipgloss.NewStyle().Width(3).Align(lipgloss.Center)
-						}
-						return cellStyle.Align(lipgloss.Center)
-					}).
-					Rows(rows...)
-				bugStr := fmt.Sprintf("%s", t)
-				lines := strings.Split(bugStr, "\n")
-				if len(lines) > 0 && lines[len(lines)-1] == "" {
-					lines = lines[:len(lines)-1]
-				}
-				bugCells = append(bugCells, lines)
 			}
+			var (
+				purple    = lipgloss.Color("99")
+				cellStyle = lipgloss.NewStyle().Padding(0, 1)
+				outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
+			)
+			t := table.New().
+				Width(SB_WIDTH).
+				Height(SB_HEIGHT).
+				Border(lipgloss.NormalBorder()).
+				BorderStyle(lipgloss.NewStyle().Foreground(purple)).
+				StyleFunc(func(row, col int) lipgloss.Style {
+					switch col {
+					case 2:
+						return lipgloss.NewStyle().Width(9).Align(lipgloss.Center)
+					case 3:
+						return outsCol
+					case 4:
+						return lipgloss.NewStyle().Width(3).Align(lipgloss.Center)
+					}
+					return cellStyle.Align(lipgloss.Center)
+				}).
+				Rows(rows...)
+			bugStr := fmt.Sprintf("%s", t)
+			// lines := strings.Split(bugStr, "\n")
+			// if len(lines) > 0 && lines[len(lines)-1] == "" {
+			// 	lines = lines[:len(lines)-1]
+			// }
+			bugCells = append(bugCells, bugStr)
 		}
 	}
-	if len(bugCells) == 0 {
-		return "no live games :("
-	}
-	var s string
-	totalCells := gCols * gRows
-	blankBug := make([]string, SB_HEIGHT)
-	blankLine := strings.Repeat(" ", SB_WIDTH)
-	for i := 0; i < SB_HEIGHT; i++ {
-		blankBug[i] = blankLine
-	}
-	for len(bugCells) < totalCells {
-		bugCells = append(bugCells, blankBug)
-	}
-	for row := 0; row < gRows; row++ {
-		for lineIdx := 0; lineIdx < SB_HEIGHT; lineIdx++ {
-			var rowLine string
-			for col := 0; col < gCols; col++ {
-				cellIndex := row*gCols + col
-				rowLine += bugCells[cellIndex][lineIdx]
-				if col < gCols-1 {
-					rowLine += " "
-				}
-			}
-			s += rowLine + "\n"
-		}
-	}
-	return s
+	return bugCells
+
+	// var s string
+	// totalCells := gCols * gRows
+	// blankBug := make([]string, SB_HEIGHT)
+	// blankLine := strings.Repeat(" ", SB_WIDTH)
+	// for i := 0; i < SB_HEIGHT; i++ {
+	// 	blankBug[i] = blankLine
+	// }
+	// for len(bugCells) < totalCells {
+	// 	bugCells = append(bugCells, blankBug)
+	// }
+	// for row := 0; row < gRows; row++ {
+	// 	for lineIdx := 0; lineIdx < SB_HEIGHT; lineIdx++ {
+	// 		var rowLine string
+	// 		for col := 0; col < gCols; col++ {
+	// 			cellIndex := row*gCols + col
+	// 			rowLine += bugCells[cellIndex][lineIdx]
+	// 			if col < gCols-1 {
+	// 				rowLine += " "
+	// 			}
+	// 		}
+	// 		s += rowLine + "\n"
+	// 	}
+	// }
+	// return s
 }
