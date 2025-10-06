@@ -28,7 +28,6 @@ func NewModel() Model {
 	games := data.BuildSchedule(data.GetSchedule())
 	p := paginator.New()
 	p.Type = paginator.Dots
-	// might want to use CalculateScorebug's row count for the per page
 	p.PerPage = 10
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
@@ -77,23 +76,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	// paginate
-	// TODO: change this to pull from m.Games, and handle the rendering of each score bug to add it to a list
-	// this will simploify a lot of this
 	g := renderSchedule(m.games)
 	var b strings.Builder
-	b.WriteString("\n Games \n\n")
+	b.WriteString("\n Games \n")
 	start, end := m.paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
-		b.WriteString("\n" + item + "\n")
+		b.WriteString("\n" + item)
 	}
-	b.WriteString(m.paginator.View())
+	b.WriteString("\n" + m.paginator.View())
 	b.WriteString("\n\n  h/l ←/→ page • q: quit\n")
 	return b.String()
 }
 
 func renderBp(g data.Game, isHome bool) string {
 	var side = strings.ToLower(g.InningSt)
+	if len(g.Pitcher) == 0 || len(g.Batter) == 0 {
+		if g.Status == "Final" && isHome {
+			return "Final"
+		}
+		return ""
+	}
 	switch side {
 	case "top":
 		if isHome {
@@ -113,15 +115,9 @@ func renderBp(g data.Game, isHome bool) string {
 }
 
 func renderSchedule(g data.Schedule) []string {
-	// determine the terminal dimensions, add 1 to width & height since table lines are not included in the render
-	// may want to move the shaping of this data into a grid into a view specific function
-	// gCols := 1
-	// _, gRows, _, err := screen.CalculateScorebugs(SB_WIDTH+1, SB_HEIGHT+1)
-	// if err != nil {
-	// 	fmt.Printf("Error setting scorebug grid size")
-	// }
 	var bugCells []string
 	if len(g.Games) > 0 {
+		// TODO move this logic into scorebug component, update scorebug component to accept more modular input
 		for _, game := range g.Games {
 			var rows [][]string
 			rows = [][]string{
@@ -164,37 +160,8 @@ func renderSchedule(g data.Schedule) []string {
 				}).
 				Rows(rows...)
 			bugStr := fmt.Sprintf("%s", t)
-			// lines := strings.Split(bugStr, "\n")
-			// if len(lines) > 0 && lines[len(lines)-1] == "" {
-			// 	lines = lines[:len(lines)-1]
-			// }
 			bugCells = append(bugCells, bugStr)
 		}
 	}
 	return bugCells
-
-	// var s string
-	// totalCells := gCols * gRows
-	// blankBug := make([]string, SB_HEIGHT)
-	// blankLine := strings.Repeat(" ", SB_WIDTH)
-	// for i := 0; i < SB_HEIGHT; i++ {
-	// 	blankBug[i] = blankLine
-	// }
-	// for len(bugCells) < totalCells {
-	// 	bugCells = append(bugCells, blankBug)
-	// }
-	// for row := 0; row < gRows; row++ {
-	// 	for lineIdx := 0; lineIdx < SB_HEIGHT; lineIdx++ {
-	// 		var rowLine string
-	// 		for col := 0; col < gCols; col++ {
-	// 			cellIndex := row*gCols + col
-	// 			rowLine += bugCells[cellIndex][lineIdx]
-	// 			if col < gCols-1 {
-	// 				rowLine += " "
-	// 			}
-	// 		}
-	// 		s += rowLine + "\n"
-	// 	}
-	// }
-	// return s
 }
