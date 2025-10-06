@@ -19,6 +19,8 @@ const (
 )
 
 var divider = lipgloss.NewStyle().Padding(0, 1)
+var primaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("253"))
+var secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
 
 type Model struct {
 	games     data.Schedule
@@ -80,13 +82,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	g := renderSchedule(m.games)
 	var b strings.Builder
-	b.WriteString("\n scorebug.sh \n" + strings.Repeat("‾", SB_WIDTH))
+	b.WriteString(primaryText.Render("\n scorebug.sh ") + secondaryText.Render("\n"+strings.Repeat("‾", SB_WIDTH)))
 	start, end := m.paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
 		b.WriteString("\n" + item)
 	}
 	b.WriteString("\n " + m.paginator.View())
-	b.WriteString("\n\n h/l ←/→ page • q: quit\n")
+	b.WriteString(secondaryText.Render("\n\n h/l ←/→ page • q: quit\n"))
 	return divider.Render(b.String())
 }
 
