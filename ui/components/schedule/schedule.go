@@ -18,6 +18,8 @@ const (
 	SB_HEIGHT = 5
 )
 
+var divider = lipgloss.NewStyle().Padding(0, 1)
+
 type Model struct {
 	games     data.Schedule
 	paginator paginator.Model
@@ -78,14 +80,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	g := renderSchedule(m.games)
 	var b strings.Builder
-	b.WriteString("\n Games \n")
+	b.WriteString("\n scorebug.sh \n" + strings.Repeat("‾", SB_WIDTH))
 	start, end := m.paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
 		b.WriteString("\n" + item)
 	}
-	b.WriteString("\n" + m.paginator.View())
-	b.WriteString("\n\n  h/l ←/→ page • q: quit\n")
-	return b.String()
+	b.WriteString("\n " + m.paginator.View())
+	b.WriteString("\n\n h/l ←/→ page • q: quit\n")
+	return divider.Render(b.String())
 }
 
 func renderBp(g data.Game, isHome bool) string {
@@ -138,14 +140,14 @@ func renderSchedule(g data.Schedule) []string {
 					}()},
 			}
 			var (
-				purple    = lipgloss.Color("99")
+				purple    = lipgloss.Color("65")
 				cellStyle = lipgloss.NewStyle().Padding(0, 1)
 				outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
 			)
 			t := table.New().
 				Width(SB_WIDTH).
 				Height(SB_HEIGHT).
-				Border(lipgloss.NormalBorder()).
+				Border(lipgloss.RoundedBorder()).
 				BorderStyle(lipgloss.NewStyle().Foreground(purple)).
 				StyleFunc(func(row, col int) lipgloss.Style {
 					switch col {
