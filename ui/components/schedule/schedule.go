@@ -105,7 +105,7 @@ func renderBp(g data.Game, isHome bool) string {
 		}
 	case "bottom":
 		if !isHome {
-			return fmt.Sprintf("%s %dP", g.Pitcher, g.PitchCount)
+			return fmt.Sprintf("%s %dp", g.Pitcher, g.PitchCount)
 		} else {
 			return fmt.Sprintf("%s %s", g.Batter, g.BatterAvg)
 		}
