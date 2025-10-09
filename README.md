@@ -3,7 +3,7 @@
 
 Live MLB scores in your terminal
 
-<img width="750" src="./sb_preview.png" />
+![ScreenShot](sb_preview.png)
 
 
 > [!WARNING]
