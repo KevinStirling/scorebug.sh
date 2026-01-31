@@ -1,16 +1,14 @@
 package schedule
 
 import (
-	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/KevinStirling/scorebug.sh/data"
+	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 )
 
 const (
@@ -92,78 +90,12 @@ func (m Model) View() string {
 	return divider.Render(b.String())
 }
 
-func renderBp(g data.Game, isHome bool) string {
-	var side = strings.ToLower(g.InningSt)
-	if len(g.Pitcher) == 0 || len(g.Batter) == 0 {
-		if g.Status == "Final" && isHome {
-			return "Final"
-		}
-		return ""
-	}
-	switch side {
-	case "top":
-		if isHome {
-			return fmt.Sprintf("%s %dp", g.Pitcher, g.PitchCount)
-		} else {
-			return fmt.Sprintf("%s %s", g.Batter, g.BatterAvg)
-		}
-	case "bottom":
-		if !isHome {
-			return fmt.Sprintf("%s %dp", g.Pitcher, g.PitchCount)
-		} else {
-			return fmt.Sprintf("%s %s", g.Batter, g.BatterAvg)
-		}
-	default:
-		return ""
-	}
-}
-
+// Renders a string slice of scorebugs for a given Schedule type
 func renderSchedule(g data.Schedule) []string {
 	var bugCells []string
 	if len(g.Games) > 0 {
-		// TODO move this logic into scorebug component, update scorebug component to accept more modular input
 		for _, game := range g.Games {
-			var rows [][]string
-			rows = [][]string{
-				{game.HomeAbbr, game.AwayAbbr, game.On2B, data.SetOut(game.Outs, 1), func() string {
-					if game.InningSt == "Top" {
-						return game.InningArrow
-					}
-					return ""
-				}()},
-				{strconv.Itoa(game.HomeRuns), strconv.Itoa(game.AwayRuns), game.On3B + " - " + game.On1B, data.SetOut(game.Outs, 2), strconv.Itoa(game.Inning)},
-				{renderBp(game, true), renderBp(game, false),
-					fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)), data.SetOut(game.Outs, 3),
-					func() string {
-						if game.InningSt == "Bottom" {
-							return game.InningArrow
-						}
-						return ""
-					}()},
-			}
-			var (
-				purple    = lipgloss.Color("65")
-				cellStyle = lipgloss.NewStyle().Padding(0, 1)
-				outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
-			)
-			t := table.New().
-				Width(SB_WIDTH).
-				Height(SB_HEIGHT).
-				Border(lipgloss.RoundedBorder()).
-				BorderStyle(lipgloss.NewStyle().Foreground(purple)).
-				StyleFunc(func(row, col int) lipgloss.Style {
-					switch col {
-					case 2:
-						return lipgloss.NewStyle().Width(9).Align(lipgloss.Center)
-					case 3:
-						return outsCol
-					case 4:
-						return lipgloss.NewStyle().Width(3).Align(lipgloss.Center)
-					}
-					return cellStyle.Align(lipgloss.Center)
-				}).
-				Rows(rows...)
-			bugStr := fmt.Sprintf("%s", t)
+			bugStr := scorebug.Render(game)
 			bugCells = append(bugCells, bugStr)
 		}
 	}

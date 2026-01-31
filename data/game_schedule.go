@@ -98,6 +98,8 @@ type Schedule struct {
 }
 
 func GetSchedule() TodaysGames {
+	// temp for off season test
+	scheduleUrl = fmt.Sprintf("https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%s&hydrate=linescore,team", "09/28/2025")
 	resp, _ := http.Get(scheduleUrl)
 	defer resp.Body.Close()
 
