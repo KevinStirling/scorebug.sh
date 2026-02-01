@@ -36,10 +36,6 @@ func (m Model) Init() tea.Cmd {
 	return checkServer
 }
 
-func checkServer() tea.Msg {
-	return data.BuildScoreBug(data.GetGameFeed(statsUrl + gamePkLink))
-}
-
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -141,4 +137,8 @@ func Render(game data.Game) string {
 		Rows(rows...)
 	bugStr := fmt.Sprintf("%s", t)
 	return bugStr
+}
+
+func checkServer() tea.Msg {
+	return data.BuildScoreBug(data.GetGameFeed(statsUrl + gamePkLink))
 }

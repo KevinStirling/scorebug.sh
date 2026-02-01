@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 )
 
 var (
@@ -12,7 +14,7 @@ var (
 	statsUrl    = "https://statsapi.mlb.com"
 )
 
-// TodaysGames will be used to store the result of the api call https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=08/24/2025&hydrate=linescore,team
+// TodaysGames stores only the useful data pulled from the mlb statsapi
 type TodaysGames struct {
 	Dates []struct {
 		Games []struct {
@@ -109,7 +111,7 @@ func GetSchedule() TodaysGames {
 	return schedule
 }
 
-func BuildSchedule(t TodaysGames) Schedule {
+func BuildSchedule(t mlbstats.Schedule) Schedule {
 	var s Schedule
 	for _, d := range t.Dates {
 		for _, g := range d.Games {

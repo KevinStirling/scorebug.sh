@@ -1,10 +1,13 @@
 package schedule
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/KevinStirling/scorebug.sh/data"
+	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,18 +19,29 @@ const (
 	SB_HEIGHT = 5
 )
 
-var divider = lipgloss.NewStyle().Padding(0, 1)
-var primaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("253"))
-var secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
+var (
+	divider       = lipgloss.NewStyle().Padding(0, 1)
+	primaryText   = lipgloss.NewStyle().Foreground(lipgloss.Color("253"))
+	secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
+)
 
 type Model struct {
 	games     data.Schedule
+	date      *time.Time
 	paginator paginator.Model
 	err       error
 }
 
+type tickMsg time.Time
+
 func NewModel() Model {
-	games := data.BuildSchedule(data.GetSchedule())
+	d := time.Date(2025, time.September, 28, 0, 0, 0, 0, time.Local)
+	res, err := mlbstats.GetSchedule(&d)
+	if err != nil {
+		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
+		os.Exit(1)
+	}
+	games := data.BuildSchedule(res)
 	p := paginator.New()
 	p.Type = paginator.Dots
 	p.PerPage = 10
@@ -37,23 +51,12 @@ func NewModel() Model {
 	return Model{
 		paginator: p,
 		games:     games,
-	}
-}
-
-type tickMsg time.Time
-
-func tickAfter(d time.Duration) tea.Cmd {
-	return tea.Tick(d, func(t time.Time) tea.Msg { return tickMsg(t) })
-}
-
-func checkServer() tea.Cmd {
-	return func() tea.Msg {
-		return data.BuildSchedule(data.GetSchedule())
+		date:      &d,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(checkServer(), tickAfter(10*time.Second))
+	return tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -65,7 +68,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tickMsg:
-		return m, tea.Batch(checkServer(), tickAfter(10*time.Second))
+		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -100,4 +103,19 @@ func renderSchedule(g data.Schedule) []string {
 		}
 	}
 	return bugCells
+}
+
+func tickAfter(d time.Duration) tea.Cmd {
+	return tea.Tick(d, func(t time.Time) tea.Msg { return tickMsg(t) })
+}
+
+func (m Model) checkServer() tea.Cmd {
+	return func() tea.Msg {
+		res, err := mlbstats.GetSchedule(m.date)
+		if err != nil {
+			fmt.Printf("oy, ya cooked, mate - %s", err.Error())
+			os.Exit(1)
+		}
+		return data.BuildSchedule(res)
+	}
 }
