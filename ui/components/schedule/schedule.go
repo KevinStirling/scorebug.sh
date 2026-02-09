@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/KevinStirling/scorebug.sh/data"
-	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,6 +25,7 @@ var (
 )
 
 type Model struct {
+	client    StatsClient
 	games     data.Schedule
 	date      *time.Time
 	paginator paginator.Model
@@ -34,9 +34,9 @@ type Model struct {
 
 type tickMsg time.Time
 
-func NewModel() Model {
+func NewModel(client StatsClient) Model {
 	d := time.Date(2025, time.September, 28, 0, 0, 0, 0, time.Local)
-	res, err := mlbstats.GetSchedule(&d)
+	res, err := client.Schedule(&d)
 	if err != nil {
 		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
 		os.Exit(1)
@@ -47,8 +47,9 @@ func NewModel() Model {
 	p.PerPage = 10
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
-	p.SetTotalPages(len(games.Games))
+	p.SetTotalPages(pages(len(games.Games), p.PerPage))
 	return Model{
+		client:    client,
 		paginator: p,
 		games:     games,
 		date:      &d,
@@ -75,6 +76,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
 		}
+	}
+	if m.paginator.Page >= m.paginator.TotalPages-1 {
+		m.paginator.Page = m.paginator.TotalPages - 1
+	}
+	if m.paginator.Page < 0 {
+		m.paginator.Page = 0
 	}
 	m.paginator, cmd = m.paginator.Update(msg)
 	return m, cmd
@@ -111,11 +118,21 @@ func tickAfter(d time.Duration) tea.Cmd {
 
 func (m Model) checkServer() tea.Cmd {
 	return func() tea.Msg {
-		res, err := mlbstats.GetSchedule(m.date)
+		res, err := m.client.Schedule(m.date)
 		if err != nil {
 			fmt.Printf("oy, ya cooked, mate - %s", err.Error())
 			os.Exit(1)
 		}
 		return data.BuildSchedule(res)
 	}
+}
+
+func pages(items, perPage int) int {
+	if perPage <= 0 {
+		return 1
+	}
+	if items == 0 {
+		return 1
+	}
+	return (items + perPage - 1) / perPage
 }
