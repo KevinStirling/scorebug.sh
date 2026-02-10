@@ -12,10 +12,17 @@ import (
 
 func main() {
 	log.SetLevel(log.DebugLevel)
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
 	client := mlbstats.New()
 	m := schedule.NewModel(client)
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
-		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
+		log.Fatal("failed to start", "error", err)
 		os.Exit(1)
 	}
 }
