@@ -23,6 +23,5 @@ func main() {
 	m := schedule.NewModel(client)
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		log.Fatal("failed to start", "error", err)
-		os.Exit(1)
 	}
 }
