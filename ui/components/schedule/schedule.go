@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -38,8 +39,7 @@ func NewModel(client StatsClient) Model {
 	d := time.Date(2025, time.September, 28, 0, 0, 0, 0, time.Local)
 	res, err := client.Schedule(&d)
 	if err != nil {
-		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
-		os.Exit(1)
+		log.Fatal("failed to fetch schedule", "error", err)
 	}
 	games := data.BuildSchedule(res)
 	p := paginator.New()
@@ -120,8 +120,7 @@ func (m Model) checkServer() tea.Cmd {
 	return func() tea.Msg {
 		res, err := m.client.Schedule(m.date)
 		if err != nil {
-			fmt.Printf("oy, ya cooked, mate - %s", err.Error())
-			os.Exit(1)
+			log.Fatal("failed to referesh schedule", "error", err)
 		}
 		return data.BuildSchedule(res)
 	}
