@@ -6,7 +6,7 @@ import (
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 )
 
-type StatsClient interface {
+type ScheduleClient interface {
 	Schedule(date *time.Time) (mlbstats.Schedule, error)
-	// LiveFeed(link string) (mlbstats.Feed, error)
+	GameFeed(gameLink string) (mlbstats.Feed, error)
 }

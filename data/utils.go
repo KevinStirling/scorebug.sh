@@ -2,6 +2,8 @@ package data
 
 import (
 	"slices"
+
+	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 )
 
 func SetRunnerState(s []int, base int) string {
@@ -18,7 +20,7 @@ func mark[T any](ptr *T) string {
 	return "◇"
 }
 
-func SetBaseRunner(feed Feed) (on1, on2, on3 string) {
+func SetBaseRunner(feed mlbstats.Feed) (on1, on2, on3 string) {
 	ri := feed.LiveData.Plays.CurrentPlay.RunnerIndex
 
 	if feed.LiveData.Linescore.Offense.First != nil {

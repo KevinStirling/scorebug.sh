@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/KevinStirling/scorebug.sh/data"
+	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,8 +25,8 @@ var (
 )
 
 type Model struct {
-	client    StatsClient
-	games     data.Schedule
+	client    ScheduleClient
+	games     []data.ScoreBug
 	date      *time.Time
 	paginator paginator.Model
 	err       error
@@ -33,23 +34,32 @@ type Model struct {
 
 type tickMsg time.Time
 
-func NewModel(client StatsClient) Model {
-	d := time.Date(2025, time.September, 28, 0, 0, 0, 0, time.Local)
-	res, err := client.Schedule(&d)
+func NewModel(client ScheduleClient) Model {
+	now := time.Now()
+	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+
+	sched, err := client.Schedule(&d)
 	if err != nil {
 		log.Fatal("failed to fetch schedule", "error", err)
 	}
-	games := data.BuildSchedule(res)
+
+	snaps, err := snapshots.Build(client, sched)
+	if err != nil {
+		log.Fatal("failed to build snapshots", "error", err)
+	}
+
+	bugs := data.BuildScoreBugs(snaps)
+
 	p := paginator.New()
 	p.Type = paginator.Dots
 	p.PerPage = 10
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
-	p.SetTotalPages(pages(len(games.Games), p.PerPage))
+	p.SetTotalPages(pages(len(bugs), p.PerPage))
 	return Model{
 		client:    client,
 		paginator: p,
-		games:     games,
+		games:     bugs,
 		date:      &d,
 	}
 }
@@ -62,7 +72,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 
-	case data.Schedule:
+	case []data.ScoreBug:
 		m.games = msg
 		return m, nil
 
@@ -99,15 +109,12 @@ func (m Model) View() string {
 }
 
 // Renders a string slice of scorebugs for a given Schedule type
-func renderSchedule(g data.Schedule) []string {
-	var bugCells []string
-	if len(g.Games) > 0 {
-		for _, game := range g.Games {
-			bugStr := scorebug.Render(game)
-			bugCells = append(bugCells, bugStr)
-		}
+func renderSchedule(bugs []data.ScoreBug) []string {
+	out := make([]string, 0, len(bugs))
+	for _, bug := range bugs {
+		out = append(out, scorebug.Render(bug))
 	}
-	return bugCells
+	return out
 }
 
 func tickAfter(d time.Duration) tea.Cmd {
@@ -116,11 +123,17 @@ func tickAfter(d time.Duration) tea.Cmd {
 
 func (m Model) checkServer() tea.Cmd {
 	return func() tea.Msg {
-		res, err := m.client.Schedule(m.date)
+		sched, err := m.client.Schedule(m.date)
 		if err != nil {
-			log.Fatal("failed to referesh schedule", "error", err)
+			log.Fatal("failed to refresh schedule", "error", err)
 		}
-		return data.BuildSchedule(res)
+
+		snaps, err := snapshots.Build(m.client, sched)
+		if err != nil {
+			log.Fatal("failed to build snapshots", "error", err)
+		}
+
+		return data.BuildScoreBugs(snaps)
 	}
 }
 
