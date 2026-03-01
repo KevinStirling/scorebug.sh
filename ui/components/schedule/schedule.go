@@ -1,16 +1,16 @@
 package schedule
 
 import (
-	"fmt"
-	"strconv"
+	"log"
 	"strings"
 	"time"
 
 	"github.com/KevinStirling/scorebug.sh/data"
+	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
+	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 )
 
 const (
@@ -18,62 +18,78 @@ const (
 	SB_HEIGHT = 5
 )
 
-var divider = lipgloss.NewStyle().Padding(0, 1)
-var primaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("253"))
-var secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
+var (
+	divider       = lipgloss.NewStyle().Padding(0, 1)
+	primaryText   = lipgloss.NewStyle().Foreground(lipgloss.Color("253"))
+	secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
+)
 
 type Model struct {
-	games     data.Schedule
+	client    ScheduleClient
+	games     []data.ScoreBug
+	date      *time.Time
 	paginator paginator.Model
 	err       error
 }
 
-func NewModel() Model {
-	games := data.BuildSchedule(data.GetSchedule())
+type tickMsg time.Time
+
+func NewModel(client ScheduleClient) Model {
+	now := time.Now()
+	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+
+	sched, err := client.Schedule(&d)
+	if err != nil {
+		log.Fatal("failed to fetch schedule", "error", err)
+	}
+
+	snaps, err := snapshots.Build(client, sched)
+	if err != nil {
+		log.Fatal("failed to build snapshots", "error", err)
+	}
+
+	bugs := data.BuildScoreBugs(snaps)
+
 	p := paginator.New()
 	p.Type = paginator.Dots
 	p.PerPage = 10
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
-	p.SetTotalPages(len(games.Games))
+	p.SetTotalPages(pages(len(bugs), p.PerPage))
 	return Model{
+		client:    client,
 		paginator: p,
-		games:     games,
-	}
-}
-
-type tickMsg time.Time
-
-func tickAfter(d time.Duration) tea.Cmd {
-	return tea.Tick(d, func(t time.Time) tea.Msg { return tickMsg(t) })
-}
-
-func checkServer() tea.Cmd {
-	return func() tea.Msg {
-		return data.BuildSchedule(data.GetSchedule())
+		games:     bugs,
+		date:      &d,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(checkServer(), tickAfter(10*time.Second))
+	return tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 
-	case data.Schedule:
+	case []data.ScoreBug:
 		m.games = msg
 		return m, nil
 
 	case tickMsg:
-		return m, tea.Batch(checkServer(), tickAfter(10*time.Second))
+		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
 		}
+	}
+	if m.paginator.Page >= m.paginator.TotalPages-1 {
+		m.paginator.Page = m.paginator.TotalPages - 1
+	}
+	if m.paginator.Page < 0 {
+		m.paginator.Page = 0
 	}
 	m.paginator, cmd = m.paginator.Update(msg)
 	return m, cmd
@@ -92,80 +108,41 @@ func (m Model) View() string {
 	return divider.Render(b.String())
 }
 
-func renderBp(g data.Game, isHome bool) string {
-	var side = strings.ToLower(g.InningSt)
-	if len(g.Pitcher) == 0 || len(g.Batter) == 0 {
-		if g.Status == "Final" && isHome {
-			return "Final"
-		}
-		return ""
+// Renders a string slice of scorebugs for a given Schedule type
+func renderSchedule(bugs []data.ScoreBug) []string {
+	out := make([]string, 0, len(bugs))
+	for _, bug := range bugs {
+		out = append(out, scorebug.Render(bug))
 	}
-	switch side {
-	case "top":
-		if isHome {
-			return fmt.Sprintf("%s %dp", g.Pitcher, g.PitchCount)
-		} else {
-			return fmt.Sprintf("%s %s", g.Batter, g.BatterAvg)
+	return out
+}
+
+func tickAfter(d time.Duration) tea.Cmd {
+	return tea.Tick(d, func(t time.Time) tea.Msg { return tickMsg(t) })
+}
+
+func (m Model) checkServer() tea.Cmd {
+	return func() tea.Msg {
+		sched, err := m.client.Schedule(m.date)
+		if err != nil {
+			log.Fatal("failed to refresh schedule", "error", err)
 		}
-	case "bottom":
-		if !isHome {
-			return fmt.Sprintf("%s %dp", g.Pitcher, g.PitchCount)
-		} else {
-			return fmt.Sprintf("%s %s", g.Batter, g.BatterAvg)
+
+		snaps, err := snapshots.Build(m.client, sched)
+		if err != nil {
+			log.Fatal("failed to build snapshots", "error", err)
 		}
-	default:
-		return ""
+
+		return data.BuildScoreBugs(snaps)
 	}
 }
 
-func renderSchedule(g data.Schedule) []string {
-	var bugCells []string
-	if len(g.Games) > 0 {
-		// TODO move this logic into scorebug component, update scorebug component to accept more modular input
-		for _, game := range g.Games {
-			var rows [][]string
-			rows = [][]string{
-				{game.HomeAbbr, game.AwayAbbr, game.On2B, data.SetOut(game.Outs, 1), func() string {
-					if game.InningSt == "Top" {
-						return game.InningArrow
-					}
-					return ""
-				}()},
-				{strconv.Itoa(game.HomeRuns), strconv.Itoa(game.AwayRuns), game.On3B + " - " + game.On1B, data.SetOut(game.Outs, 2), strconv.Itoa(game.Inning)},
-				{renderBp(game, true), renderBp(game, false),
-					fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)), data.SetOut(game.Outs, 3),
-					func() string {
-						if game.InningSt == "Bottom" {
-							return game.InningArrow
-						}
-						return ""
-					}()},
-			}
-			var (
-				purple    = lipgloss.Color("65")
-				cellStyle = lipgloss.NewStyle().Padding(0, 1)
-				outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
-			)
-			t := table.New().
-				Width(SB_WIDTH).
-				Height(SB_HEIGHT).
-				Border(lipgloss.RoundedBorder()).
-				BorderStyle(lipgloss.NewStyle().Foreground(purple)).
-				StyleFunc(func(row, col int) lipgloss.Style {
-					switch col {
-					case 2:
-						return lipgloss.NewStyle().Width(9).Align(lipgloss.Center)
-					case 3:
-						return outsCol
-					case 4:
-						return lipgloss.NewStyle().Width(3).Align(lipgloss.Center)
-					}
-					return cellStyle.Align(lipgloss.Center)
-				}).
-				Rows(rows...)
-			bugStr := fmt.Sprintf("%s", t)
-			bugCells = append(bugCells, bugStr)
-		}
+func pages(items, perPage int) int {
+	if perPage <= 0 {
+		return 1
 	}
-	return bugCells
+	if items == 0 {
+		return 1
+	}
+	return (items + perPage - 1) / perPage
 }

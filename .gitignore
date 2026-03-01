@@ -33,3 +33,4 @@ go.work.sum
 
 # project
 log.txt
+*.log

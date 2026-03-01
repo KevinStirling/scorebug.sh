@@ -3,93 +3,107 @@ package scorebug
 import (
 	"fmt"
 	"strconv"
-
-	tea "github.com/charmbracelet/bubbletea"
-	lipgloss "github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
+	"strings"
 
 	"github.com/KevinStirling/scorebug.sh/data"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
-var (
-	//TODO hard coded game feed for testing render, remove if this package is used for final renders
-	statsUrl   = "https://statsapi.mlb.com"
-	gamePkLink = "https://statsapi.mlb.com/api/v1.1/game/776796/feed/live"
+const (
+	SB_WIDTH  = 58
+	SB_HEIGHT = 5
 )
 
-type Model struct {
-	scoreBug data.ScoreBug
-	error    error
-}
+// Renders the current batter / pitcher stat strings for a given ScoreBug.
+// isHome determines which side should show batter vs pitcher depending on inning.
+func renderBp(game data.ScoreBug, isHome bool) string {
+	side := strings.ToLower(game.InningSt)
 
-func NewModel() Model {
-	return Model{}
-}
-
-func (m Model) Init() tea.Cmd {
-	return checkServer
-}
-
-func checkServer() tea.Msg {
-	return data.BuildScoreBug(data.GetGameFeed(statsUrl + gamePkLink))
-}
-
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-
-	case data.ScoreBug:
-		m.scoreBug = data.ScoreBug(msg)
-	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC {
-			return m, tea.Quit
+	if game.PitcherName == "" || game.BatterName == "" {
+		if game.Status == "Final" && isHome {
+			return "Final"
 		}
+		return ""
 	}
-	return m, nil
 
+	switch side {
+	case "top":
+		if isHome {
+			return fmt.Sprintf("%s %dp", game.PitcherName, game.PitchCount)
+		}
+		return fmt.Sprintf("%s %s", game.BatterName, game.BatterAvg)
+
+	case "bottom":
+		if !isHome {
+			return fmt.Sprintf("%s %dp", game.PitcherName, game.PitchCount)
+		}
+		return fmt.Sprintf("%s %s", game.BatterName, game.BatterAvg)
+
+	default:
+		return ""
+	}
 }
 
-func (m Model) View() string {
-	s := fmt.Sprintf("Checking for box score...\n")
-	if &m.scoreBug != nil {
-
-		rows := [][]string{
-			{m.scoreBug.HomeAbbr, m.scoreBug.AwayAbbr, strconv.Itoa(m.scoreBug.Outs) + " OUTS", "[" + m.scoreBug.On2B + "]"},
-			{strconv.Itoa(m.scoreBug.HomeRuns), strconv.Itoa(m.scoreBug.AwayRuns), strconv.Itoa(m.scoreBug.Balls) + "-" + strconv.Itoa(m.scoreBug.Strikes), "[" + m.scoreBug.On3B + "] _ [" + m.scoreBug.On1B + "]", m.scoreBug.InningSt + strconv.Itoa(m.scoreBug.Inning)},
-		}
-		var (
-			purple = lipgloss.Color("99")
-			// gray   = lipgloss.Color("245")
-			cellStyle = lipgloss.NewStyle().Padding(0, 1)
-		)
-		t := table.New().
-			Border(lipgloss.NormalBorder()).
-			BorderStyle(lipgloss.NewStyle().Foreground(purple)).
-			StyleFunc(func(row, col int) lipgloss.Style {
-				switch col {
-				case 0:
-					return cellStyle.Align(lipgloss.Center)
-				case 1:
-					return cellStyle.Align(lipgloss.Center)
-				case 2:
-					return cellStyle.Align(lipgloss.Center)
-				case 3:
-					return cellStyle.Align(lipgloss.Center)
-				case 4:
-					return cellStyle.Align(lipgloss.Center)
+// Render renders a single scorebug from a flattened ScoreBug.
+func Render(game data.ScoreBug) string {
+	rows := [][]string{
+		{
+			game.HomeAbbr,
+			game.AwayAbbr,
+			game.On2B,
+			data.SetOut(game.Outs, 1),
+			func() string {
+				if game.InningSt == "Top" {
+					return game.InningArrow
 				}
-				return cellStyle
-			}).
-			Rows(rows...)
-
-		s = fmt.Sprintf("%s", t)
+				return ""
+			}(),
+		},
+		{
+			strconv.Itoa(game.HomeRuns),
+			strconv.Itoa(game.AwayRuns),
+			game.On3B + " - " + game.On1B,
+			data.SetOut(game.Outs, 2),
+			strconv.Itoa(game.Inning),
+		},
+		{
+			renderBp(game, true),
+			renderBp(game, false),
+			fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)),
+			data.SetOut(game.Outs, 3),
+			func() string {
+				if game.InningSt == "Bottom" {
+					return game.InningArrow
+				}
+				return ""
+			}(),
+		},
 	}
 
-	return "\n" + s + "\n"
-}
+	var (
+		purple    = lipgloss.Color("65")
+		cellStyle = lipgloss.NewStyle().Padding(0, 1)
+		outsCol   = lipgloss.NewStyle().BorderLeft(false).Width(3).Align(lipgloss.Center)
+	)
 
-// func main() {
-// 	if _, err := tea.NewProgram(Model{}).Run(); err != nil {
-// 		fmt.Printf("oy, ya cooked, mate - %s", err.Error())
-// 		os.Exit(1)
-// 	}
-// }
+	t := table.New().
+		Width(SB_WIDTH).
+		Height(SB_HEIGHT).
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(lipgloss.NewStyle().Foreground(purple)).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch col {
+			case 2:
+				return lipgloss.NewStyle().Width(9).Align(lipgloss.Center)
+			case 3:
+				return outsCol
+			case 4:
+				return lipgloss.NewStyle().Width(3).Align(lipgloss.Center)
+			}
+			return cellStyle.Align(lipgloss.Center)
+		}).
+		Rows(rows...)
+
+	return fmt.Sprintf("%s", t)
+}
