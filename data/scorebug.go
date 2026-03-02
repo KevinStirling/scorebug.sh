@@ -18,11 +18,15 @@ type ScoreBug struct {
 	HomeRuns int
 	AwayRuns int
 
-	Inning      int
-	InningSt    string
-	InningArrow string
+	Inning       int
+	InningSt     string
+	InningTop    string
+	InningBottom string
 
-	Outs    int
+	Out1 string
+	Out2 string
+	Out3 string
+
 	Balls   int
 	Strikes int
 
@@ -30,13 +34,6 @@ type ScoreBug struct {
 	On2B string
 	On3B string
 
-	BatterName  string
-	BatterAvg   string
-	PitcherName string
-	PitchCount  int
-}
-
-type CurrentBP struct {
 	BatterName  string
 	BatterAvg   string
 	PitcherName string
@@ -59,11 +56,14 @@ func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
 			HomeRuns: g.Linescore.Teams.Home.Runs,
 			AwayRuns: g.Linescore.Teams.Away.Runs,
 
-			Inning:      g.Linescore.CurrentInning,
-			InningSt:    g.Linescore.InningState,
-			InningArrow: setInningArrow(g.Linescore.InningState),
+			Inning:       g.Linescore.CurrentInning,
+			InningSt:     g.Linescore.InningState,
+			InningTop:    setInningArrow(g.Linescore.InningState, "Top"),
+			InningBottom: setInningArrow(g.Linescore.InningState, "Bottom"),
 
-			Outs: g.Linescore.Outs,
+			Out1: SetOut(g.Linescore.Outs, 1),
+			Out2: SetOut(g.Linescore.Outs, 2),
+			Out3: SetOut(g.Linescore.Outs, 3),
 
 			// Defaults
 			On1B: "◇", On2B: "◇", On3B: "◇",
@@ -76,17 +76,8 @@ func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
 			bug.Balls = feed.LiveData.Plays.CurrentPlay.Count.Balls
 			bug.Strikes = feed.LiveData.Plays.CurrentPlay.Count.Strikes
 
-			// might want to update this func to accept a pointer and just change all the bases at once
-			bug.On1B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 1)
-			bug.On2B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 2)
-			bug.On3B = SetRunnerState(feed.LiveData.Plays.CurrentPlay.RunnerIndex, 3)
-
-			// same for this one...
-			bp := getCurrentBP(feed)
-			bug.BatterName = bp.BatterName
-			bug.BatterAvg = bp.BatterAvg
-			bug.PitcherName = bp.PitcherName
-			bug.PitchCount = bp.PitchCount
+			setRunners(feed, &bug)
+			setCurrentBP(feed, &bug)
 		}
 		out = append(out, bug)
 	}
@@ -95,9 +86,15 @@ func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
 
 func playerKey(id int) string { return fmt.Sprintf("ID%d", id) }
 
-// refactor this to take a pointer to a feed and modify the feed directly?
-func getCurrentBP(f mlbstats.Feed) CurrentBP {
-	bp := CurrentBP{}
+func setRunners(f mlbstats.Feed, bug *ScoreBug) {
+	offense := f.LiveData.Linescore.Offense
+
+	bug.On1B = RunnerOn(offense.First != nil)
+	bug.On2B = RunnerOn(offense.Second != nil)
+	bug.On3B = RunnerOn(offense.Third != nil)
+}
+
+func setCurrentBP(f mlbstats.Feed, bug *ScoreBug) {
 	b := f.LiveData.Plays.CurrentPlay.MatchUp.Batter
 	p := f.LiveData.Plays.CurrentPlay.MatchUp.Pitcher
 
@@ -110,7 +107,7 @@ func getCurrentBP(f mlbstats.Feed) CurrentBP {
 		return name
 	}
 
-	bp.BatterName, bp.PitcherName = splitName(b.FullName), splitName(p.FullName)
+	bug.BatterName, bug.PitcherName = splitName(b.FullName), splitName(p.FullName)
 
 	keyB, keyP := playerKey(b.Id), playerKey(p.Id)
 
@@ -119,7 +116,7 @@ func getCurrentBP(f mlbstats.Feed) CurrentBP {
 	for _, pm := range teams {
 		if pl, ok := pm[keyB]; ok {
 			if pl.SeasonStats.Batting.Avg != "" {
-				bp.BatterAvg = pl.SeasonStats.Batting.Avg
+				bug.BatterAvg = pl.SeasonStats.Batting.Avg
 				break
 			}
 		}
@@ -128,12 +125,9 @@ func getCurrentBP(f mlbstats.Feed) CurrentBP {
 	for _, pm := range teams {
 		if pl, ok := pm[keyP]; ok {
 			if pl.Stats.Pitching.PitchesThrown != 0 {
-				bp.PitchCount = pl.Stats.Pitching.PitchesThrown
+				bug.PitchCount = pl.Stats.Pitching.PitchesThrown
 				break
 			}
 		}
 	}
-
-	return bp
-
 }
