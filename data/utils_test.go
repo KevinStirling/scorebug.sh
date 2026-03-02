@@ -6,25 +6,46 @@ import (
 	"github.com/KevinStirling/scorebug.sh/data"
 )
 
-func TestSetRunnerState(t *testing.T) {
+func TestRunnerOn(t *testing.T) {
 	cases := []struct {
-		Name    string
-		Runners []int
-		Base    int
-		Desired string
+		name    string
+		on      bool
+		desired string
 	}{
-		{"RunnerOnFirst", []int{1}, 1, "◆"},
-		{"RunnerOnSecond", []int{2}, 2, "◆"},
-		{"RunnerOnThird", []int{3}, 3, "◆"},
-		{"NoRunner", []int{}, 1, "◇"},
-		{"WrongBase", []int{2}, 1, "◇"},
+		{"runner on base", true, "◆"},
+		{"no runner", false, "◇"},
 	}
 
-	for i := range cases {
-		s := data.SetRunnerState(cases[i].Runners, cases[i].Base)
-		if s != cases[i].Desired {
-			t.Logf("\"%s\" case expected %s, got %s", cases[i].Name, cases[i].Desired, s)
-			t.Fail()
-		}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := data.RunnerOn(tc.on)
+			if got != tc.desired {
+				t.Errorf("RunnerOn(%v) = %s, want %s", tc.on, got, tc.desired)
+			}
+		})
+	}
+}
+
+func TestSetOut(t *testing.T) {
+	cases := []struct {
+		name    string
+		outs    int
+		pos     int
+		desired string
+	}{
+		{"0 outs, pos 1", 0, 1, "◯"},
+		{"1 out, pos 1", 1, 1, "◉"},
+		{"1 out, pos 2", 1, 2, "◯"},
+		{"2 outs, pos 2", 2, 2, "◉"},
+		{"3 outs, pos 3", 3, 3, "◉"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := data.SetOut(tc.outs, tc.pos)
+			if got != tc.desired {
+				t.Errorf("SetOut(%d, %d) = %s, want %s", tc.outs, tc.pos, got, tc.desired)
+			}
+		})
 	}
 }

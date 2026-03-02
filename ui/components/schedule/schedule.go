@@ -13,17 +13,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const (
-	SB_WIDTH  = 58
-	SB_HEIGHT = 5
-)
-
-var (
-	divider       = lipgloss.NewStyle().Padding(0, 1)
-	primaryText   = lipgloss.NewStyle().Foreground(lipgloss.Color("253"))
-	secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
-)
-
 type Model struct {
 	client    ScheduleClient
 	games     []data.ScoreBug
@@ -38,24 +27,14 @@ func NewModel(client ScheduleClient) Model {
 	now := time.Now()
 	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
-	sched, err := client.Schedule(&d)
-	if err != nil {
-		log.Fatal("failed to fetch schedule", "error", err)
-	}
-
-	snaps, err := snapshots.Build(client, sched)
-	if err != nil {
-		log.Fatal("failed to build snapshots", "error", err)
-	}
-
-	bugs := data.BuildScoreBugs(snaps)
+	bugs := fetchScoreBugs(client, &d)
 
 	p := paginator.New()
 	p.Type = paginator.Dots
 	p.PerPage = 10
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
-	p.SetTotalPages(pages(len(bugs), p.PerPage))
+	p.SetTotalPages(len(bugs))
 	return Model{
 		client:    client,
 		paginator: p,
@@ -74,6 +53,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case []data.ScoreBug:
 		m.games = msg
+		m.paginator.SetTotalPages(len(msg))
 		return m, nil
 
 	case tickMsg:
@@ -98,7 +78,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	g := renderSchedule(m.games)
 	var b strings.Builder
-	b.WriteString(primaryText.Render("\n scorebug.sh ") + secondaryText.Render("\n"+strings.Repeat("‾", SB_WIDTH)))
+	b.WriteString(primaryText.Render("\n scorebug.sh ") + secondaryText.Render("\n"+strings.Repeat("‾", scorebug.SB_WIDTH)))
 	start, end := m.paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
 		b.WriteString("\n" + item)
@@ -123,26 +103,20 @@ func tickAfter(d time.Duration) tea.Cmd {
 
 func (m Model) checkServer() tea.Cmd {
 	return func() tea.Msg {
-		sched, err := m.client.Schedule(m.date)
-		if err != nil {
-			log.Fatal("failed to refresh schedule", "error", err)
-		}
-
-		snaps, err := snapshots.Build(m.client, sched)
-		if err != nil {
-			log.Fatal("failed to build snapshots", "error", err)
-		}
-
-		return data.BuildScoreBugs(snaps)
+		return fetchScoreBugs(m.client, m.date)
 	}
 }
 
-func pages(items, perPage int) int {
-	if perPage <= 0 {
-		return 1
+func fetchScoreBugs(client ScheduleClient, date *time.Time) []data.ScoreBug {
+	sched, err := client.Schedule(date)
+	if err != nil {
+		log.Fatal("failed to fetch schedule", "error", err)
 	}
-	if items == 0 {
-		return 1
+
+	snaps, err := snapshots.Build(client, sched)
+	if err != nil {
+		log.Fatal("failed to build snapshots", "error", err)
 	}
-	return (items + perPage - 1) / perPage
+
+	return data.BuildScoreBugs(snaps)
 }
