@@ -1,0 +1,22 @@
+{
+  "config": {
+    "commit-operations": {
+      "pre-commit": [
+        {
+          "name": "lint",
+          "command": "golangci-lint run ./..."
+        },
+        {
+          "name": "unit-tests",
+          "command": "make test"
+        }
+      ],
+      "prepare-commit-msg": [],
+      "commit-msg": [],
+      "post-commit": []
+    },
+    "checkout-operations": {
+      "post-checkout": []
+    }
+  }
+}

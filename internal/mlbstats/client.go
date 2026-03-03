@@ -3,6 +3,7 @@ package mlbstats
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -35,10 +36,16 @@ func (c *Client) Schedule(date *time.Time) (Schedule, error) {
 	if err != nil {
 		return Schedule{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close response body: %v", err)
+		}
+	}()
 
 	var out Schedule
-	json.NewDecoder(resp.Body).Decode(&out)
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		log.Printf("failed to decode response body: %v", err)
+	}
 
 	return out, nil
 }
@@ -52,10 +59,16 @@ func (c *Client) GameFeed(gameLink string) (Feed, error) {
 	if err != nil {
 		return Feed{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close response body: %v", err)
+		}
+	}()
 
 	var out Feed
-	json.NewDecoder(resp.Body).Decode(&out)
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		log.Printf("failed to decode response body: %v", err)
+	}
 
 	return out, nil
 }

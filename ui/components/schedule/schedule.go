@@ -18,7 +18,6 @@ type Model struct {
 	games     []data.ScoreBug
 	date      *time.Time
 	paginator paginator.Model
-	err       error
 }
 
 type tickMsg time.Time

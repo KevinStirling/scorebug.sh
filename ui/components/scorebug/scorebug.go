@@ -35,7 +35,7 @@ func Render(game data.ScoreBug) string {
 		{
 			renderBp(game, true),
 			renderBp(game, false),
-			fmt.Sprintf("%s", strconv.Itoa(game.Balls)+"-"+strconv.Itoa(game.Strikes)),
+			fmt.Sprintf("%d-%d", game.Balls, game.Strikes),
 			game.Out3,
 			game.InningBottom,
 		},
@@ -59,7 +59,7 @@ func Render(game data.ScoreBug) string {
 		}).
 		Rows(rows...)
 
-	return fmt.Sprintf("%s", t)
+	return fmt.Sprint(t)
 }
 
 // Renders the current batter / pitcher stat strings for a given ScoreBug.

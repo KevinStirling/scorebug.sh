@@ -17,7 +17,11 @@ func main() {
 		fmt.Println("fatal:", err)
 		os.Exit(1)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("failed to close log file: %v", err)
+		}
+	}()
 
 	client := mlbstats.New()
 	m := schedule.NewModel(client)
