@@ -1,9 +1,17 @@
 package schedule
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"os"
+
+	"charm.land/lipgloss/v2"
+)
 
 var (
 	divider       = lipgloss.NewStyle().Padding(0, 1)
-	primaryText   = lipgloss.NewStyle().Foreground(lipgloss.Color("253"))
-	secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Color("247"))
+	primaryText   = lipgloss.NewStyle().Foreground(lipgloss.Green)
+	secondaryText = lipgloss.NewStyle().Foreground(lipgloss.Black)
+
+	hasDark       = lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+	lightDark     = lipgloss.LightDark(hasDark)
+	adaptiveBlack = lightDark(lipgloss.BrightBlack, lipgloss.Black)
 )

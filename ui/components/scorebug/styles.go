@@ -1,6 +1,6 @@
 package scorebug
 
-import "github.com/charmbracelet/lipgloss"
+import "charm.land/lipgloss/v2"
 
 var (
 	purple    = lipgloss.Color("#5F5FAF")

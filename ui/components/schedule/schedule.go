@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/bubbles/v2/paginator"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/KevinStirling/scorebug.sh/data"
 	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
-	"github.com/charmbracelet/bubbles/paginator"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type Model struct {
@@ -31,8 +31,9 @@ func NewModel(client ScheduleClient) Model {
 	p := paginator.New()
 	p.Type = paginator.Dots
 	p.PerPage = 10
-	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
-	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
+	// might not be using the adaptive color right... might need to base it off the state rather than background
+	p.ActiveDot = lipgloss.NewStyle().Foreground(adaptiveBlack).Render("•")
+	p.InactiveDot = lipgloss.NewStyle().Foreground(adaptiveBlack).Render("•")
 	p.SetTotalPages(len(bugs))
 	return Model{
 		client:    client,
@@ -58,7 +59,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
@@ -74,7 +75,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
 	g := renderSchedule(m.games)
 	var b strings.Builder
 	b.WriteString(primaryText.Render("\n scorebug.sh ") + secondaryText.Render("\n"+strings.Repeat("‾", scorebug.SB_WIDTH)))
@@ -84,7 +85,11 @@ func (m Model) View() string {
 	}
 	b.WriteString("\n " + m.paginator.View())
 	b.WriteString(secondaryText.Render("\n\n h/l ←/→ page • q: quit\n"))
-	return divider.Render(b.String())
+
+	v := tea.NewView(divider.Render(b.String()))
+	v.AltScreen = true
+
+	return v
 }
 
 // Renders a string slice of scorebugs for a given Schedule type
