@@ -5,9 +5,9 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/log/v2"
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 	"github.com/KevinStirling/scorebug.sh/ui/components/schedule"
-	"github.com/charmbracelet/log"
 )
 
 func main() {
