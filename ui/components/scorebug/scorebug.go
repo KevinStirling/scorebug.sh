@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/table"
 	"github.com/KevinStirling/scorebug.sh/data"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 )
 
 const (
@@ -45,7 +45,7 @@ func Render(game data.ScoreBug) string {
 		Width(SB_WIDTH).
 		Height(SB_HEIGHT).
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(purple)).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Green)).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch col {
 			case 2:
