@@ -24,8 +24,7 @@ type tickMsg time.Time
 
 func NewModel(client ScheduleClient) Model {
 	now := time.Now()
-	// d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
-	d := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, time.Local)
+	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
 	bugs := fetchScoreBugs(client, &d)
 
