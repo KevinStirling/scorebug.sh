@@ -24,7 +24,8 @@ type tickMsg time.Time
 
 func NewModel(client ScheduleClient) Model {
 	now := time.Now()
-	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	// d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	d := time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, time.Local)
 
 	bugs := fetchScoreBugs(client, &d)
 
@@ -32,8 +33,8 @@ func NewModel(client ScheduleClient) Model {
 	p.Type = paginator.Dots
 	p.PerPage = 10
 	// might not be using the adaptive color right... might need to base it off the state rather than background
-	p.ActiveDot = lipgloss.NewStyle().Foreground(adaptiveBlack).Render("•")
-	p.InactiveDot = lipgloss.NewStyle().Foreground(adaptiveBlack).Render("•")
+	p.ActiveDot = lipgloss.NewStyle().Foreground(adaptiveActive).Render("•")
+	p.InactiveDot = lipgloss.NewStyle().Foreground(adaptiveInactive).Render("•")
 	p.SetTotalPages(len(bugs))
 	return Model{
 		client:    client,

@@ -45,7 +45,7 @@ func Render(game data.ScoreBug) string {
 		Width(SB_WIDTH).
 		Height(SB_HEIGHT).
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(purple)).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Green)).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch col {
 			case 2:
