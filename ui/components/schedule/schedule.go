@@ -98,13 +98,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() tea.View {
 	g := renderSchedule(m.games, m.activeTab)
 	var b strings.Builder
-	b.WriteString(primaryText.Render("\nscorebug.sh  ") + accentText.Render("l") + secondaryText.Render("ive • preview • final") + secondaryText.Render("\n"+strings.Repeat("‾", scorebug.SB_WIDTH)))
+	b.WriteString(renderHeader(m.tabs, m.activeTab))
 	start, end := m.paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
 		b.WriteString("\n" + item)
 	}
 	b.WriteString("\n " + m.paginator.View())
-	b.WriteString(secondaryText.Render("\n\n h/l ←/→ page • q: quit\n"))
+	b.WriteString(secondaryText.Render("\n\n h/l ←/→ page • q: quit • l: live • p: preview • f: final\n"))
 
 	v := tea.NewView(divider.Render(b.String()))
 	v.AltScreen = true
@@ -156,4 +156,19 @@ func fetchScoreBugs(client ScheduleClient, date *time.Time) []data.ScoreBug {
 	}
 
 	return data.BuildScoreBugs(snaps)
+}
+
+func renderHeader(tabs []string, activeTab int) string {
+	parts := make([]string, len(tabs))
+	for i, t := range tabs {
+		if i == activeTab {
+			parts[i] = accentText.Render(t)
+		} else {
+			parts[i] = accentText.Render(t[:1]) + secondaryText.Render(t[1:])
+		}
+	}
+
+	return primaryText.Render("\nscorebug.sh  ") +
+		strings.Join(parts, secondaryText.Render(" • ")) +
+		secondaryText.Render("\n"+strings.Repeat("‾", scorebug.SB_WIDTH))
 }
