@@ -14,10 +14,13 @@ import (
 )
 
 type Model struct {
-	client    ScheduleClient
-	games     []data.ScoreBug
-	date      *time.Time
-	paginator paginator.Model
+	client     ScheduleClient
+	games      []data.ScoreBug
+	date       *time.Time
+	paginator  paginator.Model
+	tabs       []string
+	tabContent []string
+	activeTab  int
 }
 
 type tickMsg time.Time
@@ -40,6 +43,8 @@ func NewModel(client ScheduleClient) Model {
 		paginator: p,
 		games:     bugs,
 		date:      &d,
+		tabs:      []string{"live", "preview", "final"},
+		activeTab: 0,
 	}
 }
 
@@ -53,7 +58,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case []data.ScoreBug:
 		m.games = msg
-		m.paginator.SetTotalPages(len(msg))
+		m.tabContent = renderSchedule(m.games, m.activeTab)
+		if len(m.tabContent) == 0 {
+			m.paginator.TotalPages = 1
+			m.paginator.Page = 0
+		} else {
+			m.paginator.SetTotalPages(len(m.tabContent))
+			if m.paginator.Page > m.paginator.TotalPages-1 {
+				m.paginator.Page = m.paginator.TotalPages - 1
+			}
+		}
 		return m, nil
 
 	case tickMsg:
@@ -63,6 +77,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
+		case "l":
+			m.activeTab = 0
+		case "p":
+			m.activeTab = 1
+		case "f":
+			m.activeTab = 2
 		}
 	}
 	if m.paginator.Page >= m.paginator.TotalPages-1 {
@@ -76,9 +96,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() tea.View {
-	g := renderSchedule(m.games)
+	g := renderSchedule(m.games, m.activeTab)
 	var b strings.Builder
-	b.WriteString(primaryText.Render("\nscorebug.sh") + accentText.Render(" ~ ") + secondaryText.Render("live • preview • final") + secondaryText.Render("\n"+strings.Repeat("‾", scorebug.SB_WIDTH)))
+	b.WriteString(primaryText.Render("\nscorebug.sh  ") + accentText.Render("l") + secondaryText.Render("ive • preview • final") + secondaryText.Render("\n"+strings.Repeat("‾", scorebug.SB_WIDTH)))
 	start, end := m.paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
 		b.WriteString("\n" + item)
@@ -93,38 +113,24 @@ func (m Model) View() tea.View {
 }
 
 // Renders a string slice of scorebugs for a given Schedule type
-func renderSchedule(bugs []data.ScoreBug) []string {
+func renderSchedule(bugs []data.ScoreBug, activeTab int) []string {
 	out := make([]string, 0, len(bugs))
-	var live, preview, final, other []string
 	for _, bug := range bugs {
-		switch bug.Status {
-		case "Live":
-			live = append(live, scorebug.Render(bug))
-		case "Preview":
-			preview = append(preview, scorebug.Render(bug))
-		case "Final":
-			final = append(final, scorebug.Render(bug))
-		default:
-			other = append(other, scorebug.Render(bug))
+		switch activeTab {
+		case 0:
+			if bug.Status == "Live" {
+				out = append(out, scorebug.Render(bug))
+			}
+		case 1:
+			if bug.Status == "Preview" {
+				out = append(out, scorebug.Render(bug))
+			}
+		case 2:
+			if bug.Status == "Final" || bug.Status == "Other" {
+				out = append(out, scorebug.Render(bug))
+			}
 		}
 	}
-	if len(live) > 0 {
-		out = append(out, primaryText.Render("Live"))
-		out = append(out, live...)
-	}
-	if len(preview) > 0 {
-		out = append(out, primaryText.Render("Preview"))
-		out = append(out, preview...)
-	}
-	if len(final) > 0 {
-		out = append(out, primaryText.Render("Final"))
-		out = append(out, final...)
-	}
-	if len(other) > 0 {
-		// for games postponed or delayed
-		out = append(out, other...)
-	}
-
 	return out
 }
 
