@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/paginator"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -19,7 +20,7 @@ type Model struct {
 	date       *time.Time
 	paginator  paginator.Model
 	tabs       []string
-	tabContent []string
+	tabContent [3][]string
 	activeTab  int
 }
 
@@ -32,9 +33,14 @@ func NewModel(client ScheduleClient) Model {
 	bugs := fetchScoreBugs(client, &d)
 
 	p := paginator.New()
+	p.KeyMap = paginator.KeyMap{
+		NextPage: key.NewBinding(key.WithKeys("pgright", "n")),
+		PrevPage: key.NewBinding(key.WithKeys("pgleft", "p")),
+	}
 	p.Type = paginator.Dots
 	p.PerPage = 10
-	// might not be using the adaptive color right... might need to base it off the state rather than background
+
+	// TODO fix adaptiveActive color... don't think i'm using it right
 	p.ActiveDot = lipgloss.NewStyle().Foreground(adaptiveActive).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(adaptiveInactive).Render("•")
 	p.SetTotalPages(len(bugs))
@@ -43,7 +49,7 @@ func NewModel(client ScheduleClient) Model {
 		paginator: p,
 		games:     bugs,
 		date:      &d,
-		tabs:      []string{"live", "preview", "final"},
+		tabs:      []string{"live", "scheduled", "final"},
 		activeTab: 0,
 	}
 }
@@ -58,19 +64,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case []data.ScoreBug:
 		m.games = msg
-		m.tabContent = renderSchedule(m.games, m.activeTab)
-		if len(m.tabContent) == 0 {
-			m.paginator.TotalPages = 1
-			m.paginator.Page = 0
-		} else {
-			m.paginator.SetTotalPages(len(m.tabContent))
-			if m.paginator.Page > m.paginator.TotalPages-1 {
-				m.paginator.Page = m.paginator.TotalPages - 1
-			}
+		for i := range m.tabs {
+			m.tabContent[i] = renderTab(m.games, i)
 		}
+		m.syncPaginator()
 		return m, nil
 
 	case tickMsg:
+		m.syncPaginator()
 		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 
 	case tea.KeyPressMsg:
@@ -79,24 +80,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "l":
 			m.activeTab = 0
-		case "p":
+		case "s":
 			m.activeTab = 1
 		case "f":
 			m.activeTab = 2
 		}
 	}
-	if m.paginator.Page >= m.paginator.TotalPages-1 {
-		m.paginator.Page = m.paginator.TotalPages - 1
-	}
-	if m.paginator.Page < 0 {
-		m.paginator.Page = 0
-	}
+	m.syncPaginator()
 	m.paginator, cmd = m.paginator.Update(msg)
 	return m, cmd
 }
 
 func (m Model) View() tea.View {
-	g := renderSchedule(m.games, m.activeTab)
+	g := renderTab(m.games, m.activeTab)
 	var b strings.Builder
 	b.WriteString(renderHeader(m.tabs, m.activeTab))
 	start, end := m.paginator.GetSliceBounds(len(g))
@@ -104,7 +100,7 @@ func (m Model) View() tea.View {
 		b.WriteString("\n" + item)
 	}
 	b.WriteString("\n " + m.paginator.View())
-	b.WriteString(secondaryText.Render("\n\n h/l ←/→ page • q: quit • l: live • p: preview • f: final\n"))
+	b.WriteString(secondaryText.Render("\n\n n/p ←/→ page • q: quit • l: live • s: scheduled • f: final\n"))
 
 	v := tea.NewView(divider.Render(b.String()))
 	v.AltScreen = true
@@ -112,11 +108,11 @@ func (m Model) View() tea.View {
 	return v
 }
 
-// Renders a string slice of scorebugs for a given Schedule type
-func renderSchedule(bugs []data.ScoreBug, activeTab int) []string {
+// Renders a string slice of scorebugs for a given tab
+func renderTab(bugs []data.ScoreBug, tab int) []string {
 	out := make([]string, 0, len(bugs))
 	for _, bug := range bugs {
-		switch activeTab {
+		switch tab {
 		case 0:
 			if bug.Status == "Live" {
 				out = append(out, scorebug.Render(bug))
@@ -156,6 +152,19 @@ func fetchScoreBugs(client ScheduleClient, date *time.Time) []data.ScoreBug {
 	}
 
 	return data.BuildScoreBugs(snaps)
+}
+
+func (m *Model) syncPaginator() {
+	content := m.tabContent[m.activeTab]
+	if len(content) == 0 {
+		m.paginator.TotalPages = 1
+		m.paginator.Page = 0
+		return
+	}
+	m.paginator.SetTotalPages(len(content))
+	if m.paginator.Page > m.paginator.TotalPages-1 {
+		m.paginator.Page = m.paginator.TotalPages - 1
+	}
 }
 
 func renderHeader(tabs []string, activeTab int) string {
