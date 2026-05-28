@@ -1,0 +1,73 @@
+version: 2
+
+builds:
+  - id: "scorebug"
+    main: "./cmd/scorebug"
+    binary: "scorebug"
+
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    flags:
+      - -trimpath
+    ignore:
+      - goos: windows
+        goarch: arm
+    ldflags:
+      - -s -w
+
+archives:
+  - formats: ['tar.gz']
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        formats: ['zip']
+
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: KevinStirling
+    name: scorebug.sh
+
+homebrew_casks:
+  - name: scorebug
+
+    commit_author:
+      name: KevinStirling
+      email: TODO
+
+    homepage: "https://github.com/KevinStirling/scorebug.sh"
+    description: "Live MLB scores in your terminal"
+    license: "MIT"
+    url:
+      verified: github.com/KevinStirling/scorebug.sh
+
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/freight"]
+          end
+
+    repository:
+      owner: KevinStirling
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.GORELEASER_AUTH_TOKEN }}"
