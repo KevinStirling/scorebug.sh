@@ -39,7 +39,7 @@ archives:
         formats: ['zip']
 
 changelog:
-  disable: true
+  disable: false
 
 release:
   github:
@@ -51,7 +51,7 @@ homebrew_casks:
 
     commit_author:
       name: KevinStirling
-      email: TODO
+      email: youngks93@gmail.com
 
     homepage: "https://github.com/KevinStirling/scorebug.sh"
     description: "Live MLB scores in your terminal"
