@@ -12,7 +12,7 @@ Live MLB scores in your terminal
 # Installation
 **brew**
 ```
-brew install --cask kevinstirling/tap/<cask-name>
+brew install --cask kevinstirling/tap/scorebug
 ```
 
 **Go toolchain**
