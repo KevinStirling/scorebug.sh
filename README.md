@@ -17,7 +17,7 @@ brew install --cask kevinstirling/tap/scorebug
 
 **scoop**
 ```
-scoop bucket add org https://github.com/kevinstirling/scoop-bucket.git
+scoop bucket add kevinstirling https://github.com/kevinstirling/scoop-bucket.git
 scoop install kevinstirling/scorebug
 ```
 
