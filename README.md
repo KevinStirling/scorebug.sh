@@ -10,12 +10,12 @@ Live MLB scores in your terminal
 > This project is in the early phase of development. Bugs are expected, and the issues are open for submission :)
 
 # Installation
-## brew
+**brew**
 ```
 brew install --cask kevinstirling/tap/<cask-name>
 ```
 
-## Go toolchain
+**Go toolchain**
 ```
 go install github.com/KevinStirling/scorebug.sh/cmd/scorebug@latest
 ```
