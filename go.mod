@@ -1,6 +1,6 @@
 module github.com/KevinStirling/scorebug.sh
 
-go 1.25.8
+go 1.26.3
 
 require (
 	charm.land/bubbles/v2 v2.0.0
