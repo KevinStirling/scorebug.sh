@@ -15,6 +15,12 @@ Live MLB scores in your terminal
 brew install --cask kevinstirling/tap/scorebug
 ```
 
+**scoop**
+```
+scoop bucket add org https://github.com/kevinstirling/scoop-bucket.git
+scoop install kevinstirling/scorebug
+```
+
 **Go toolchain**
 ```
 go install github.com/KevinStirling/scorebug.sh/cmd/scorebug@latest

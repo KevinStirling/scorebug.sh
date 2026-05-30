@@ -71,3 +71,32 @@ homebrew_casks:
       name: homebrew-tap
       branch: main
       token: "{{ .Env.GORELEASER_AUTH_TOKEN }}"
+
+scoops:
+    name: scorebug
+    url_template: "https://github.com/KevinStirling/scorebug.sh/releases/{{ .Tag }}/{{ .ArtifactName }}"
+    commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
+    homepage: "https://github.com/KevinStirling/scorebug.sh"
+    description: "Live MLB scores in your terminal"
+    license: MIT
+    skip_upload: auto
+    persist:
+      - "data"
+      - "config.toml"
+    pre_install: ["Write-Host 'Running preinstall command'"]
+    post_install: ["Write-Host 'Running postinstall command'"]
+    depends: ["git", "foo"]
+    shortcuts: [["scorebug.exe", "scorebug"]]
+    goamd64: v3
+
+    repository:
+      owner: KevinStirling
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.GORELEASER_AUTH_TOKEN }}"
+
+    commit_author:
+      name: goreleaserbot
+      email: youngks93@gmail.com
+      signing:
+        enabled: false
