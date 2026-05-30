@@ -73,7 +73,7 @@ homebrew_casks:
       token: "{{ .Env.GORELEASER_AUTH_TOKEN }}"
 
 scoops:
-    name: scorebug
+  - name: scorebug
     url_template: "https://github.com/KevinStirling/scorebug.sh/releases/{{ .Tag }}/{{ .ArtifactName }}"
     commit_msg_template: "Scoop update for {{ .ProjectName }} version {{ .Tag }}"
     homepage: "https://github.com/KevinStirling/scorebug.sh"
