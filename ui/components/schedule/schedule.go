@@ -12,6 +12,7 @@ import (
 	"github.com/KevinStirling/scorebug.sh/data"
 	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
+	"github.com/KevinStirling/scorebug.sh/ui/screen"
 )
 
 type Model struct {
@@ -38,7 +39,6 @@ func NewModel(client ScheduleClient) Model {
 		PrevPage: key.NewBinding(key.WithKeys("pgleft", "p")),
 	}
 	p.Type = paginator.Dots
-	p.PerPage = 10
 
 	// TODO fix adaptiveActive color... don't think i'm using it right
 	p.ActiveDot = lipgloss.NewStyle().Foreground(adaptiveActive).Render("•")
@@ -85,6 +85,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "f":
 			m.activeTab = 2
 		}
+	case tea.WindowSizeMsg:
+		if pages, err := screen.GetSchedulePageSize(scorebug.SB_HEIGHT, scorebug.SB_MARGIN, msg.Height); err != nil {
+			log.Fatal("failed to determine scheudle page size for provided SB_HEIGHT", "SB_HEIGHT", scorebug.SB_HEIGHT)
+		} else {
+			m.paginator.PerPage = pages
+		}
+
 	}
 	m.syncPaginator()
 	m.paginator, cmd = m.paginator.Update(msg)
@@ -97,7 +104,10 @@ func (m Model) View() tea.View {
 	b.WriteString(renderHeader(m.tabs, m.activeTab))
 	start, end := m.paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
-		b.WriteString("\n" + item)
+		for range scorebug.SB_MARGIN {
+			b.WriteString("\n")
+		}
+		b.WriteString(item)
 	}
 	b.WriteString("\n " + m.paginator.View())
 	b.WriteString(secondaryText.Render("\n\n n/p ←/→ page • q: quit • l: live • s: scheduled • f: final\n"))

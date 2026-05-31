@@ -13,6 +13,7 @@ import (
 const (
 	SB_WIDTH  = 58
 	SB_HEIGHT = 5
+	SB_MARGIN = 1
 )
 
 // Render a scorebug from the data.ScoreBug
