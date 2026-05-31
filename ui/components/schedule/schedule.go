@@ -12,17 +12,16 @@ import (
 	"github.com/KevinStirling/scorebug.sh/data"
 	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
-	"github.com/KevinStirling/scorebug.sh/ui/screen"
 )
 
 type Model struct {
 	client     ScheduleClient
 	games      []data.ScoreBug
 	date       *time.Time
-	paginator  paginator.Model
+	Paginator  paginator.Model
 	tabs       []string
 	tabContent [3][]string
-	activeTab  int
+	ActiveTab  int
 }
 
 type tickMsg time.Time
@@ -46,11 +45,11 @@ func NewModel(client ScheduleClient) Model {
 	p.SetTotalPages(len(bugs))
 	return Model{
 		client:    client,
-		paginator: p,
+		Paginator: p,
 		games:     bugs,
 		date:      &d,
 		tabs:      []string{"live", "scheduled", "final"},
-		activeTab: 0,
+		ActiveTab: 0,
 	}
 }
 
@@ -58,7 +57,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 
@@ -74,48 +73,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.syncPaginator()
 		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 
-	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
-		case "l":
-			m.activeTab = 0
-		case "s":
-			m.activeTab = 1
-		case "f":
-			m.activeTab = 2
-		}
-	case tea.WindowSizeMsg:
-		if pages, err := screen.GetSchedulePageSize(scorebug.SB_HEIGHT, scorebug.SB_MARGIN, msg.Height); err != nil {
-			log.Fatal("failed to determine scheudle page size for provided SB_HEIGHT", "SB_HEIGHT", scorebug.SB_HEIGHT)
-		} else {
-			m.paginator.PerPage = pages
-		}
-
 	}
 	m.syncPaginator()
-	m.paginator, cmd = m.paginator.Update(msg)
+	m.Paginator, cmd = m.Paginator.Update(msg)
 	return m, cmd
 }
 
-func (m Model) View() tea.View {
-	g := renderTab(m.games, m.activeTab)
+func (m Model) View() string {
+	g := renderTab(m.games, m.ActiveTab)
 	var b strings.Builder
-	b.WriteString(renderHeader(m.tabs, m.activeTab))
-	start, end := m.paginator.GetSliceBounds(len(g))
+	b.WriteString(renderHeader(m.tabs, m.ActiveTab))
+	start, end := m.Paginator.GetSliceBounds(len(g))
 	for _, item := range g[start:end] {
 		for range scorebug.SB_MARGIN {
 			b.WriteString("\n")
 		}
 		b.WriteString(item)
 	}
-	b.WriteString("\n " + m.paginator.View())
-	b.WriteString(secondaryText.Render("\n\n n/p ←/→ page • q: quit • l: live • s: scheduled • f: final\n"))
+	b.WriteString("\n")
+	b.WriteString(m.Paginator.View())
 
-	v := tea.NewView(divider.Render(b.String()))
-	v.AltScreen = true
-
-	return v
+	return divider.Render(b.String())
 }
 
 // Renders a string slice of scorebugs for a given tab
@@ -165,15 +143,15 @@ func fetchScoreBugs(client ScheduleClient, date *time.Time) []data.ScoreBug {
 }
 
 func (m *Model) syncPaginator() {
-	content := m.tabContent[m.activeTab]
+	content := m.tabContent[m.ActiveTab]
 	if len(content) == 0 {
-		m.paginator.TotalPages = 1
-		m.paginator.Page = 0
+		m.Paginator.TotalPages = 1
+		m.Paginator.Page = 0
 		return
 	}
-	m.paginator.SetTotalPages(len(content))
-	if m.paginator.Page > m.paginator.TotalPages-1 {
-		m.paginator.Page = m.paginator.TotalPages - 1
+	m.Paginator.SetTotalPages(len(content))
+	if m.Paginator.Page > m.Paginator.TotalPages-1 {
+		m.Paginator.Page = m.Paginator.TotalPages - 1
 	}
 }
 

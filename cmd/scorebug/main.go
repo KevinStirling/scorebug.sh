@@ -6,8 +6,9 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/log/v2"
-	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
-	"github.com/KevinStirling/scorebug.sh/ui/components/schedule"
+	// "github.com/KevinStirling/scorebug.sh/internal/mlbstats"
+	// "github.com/KevinStirling/scorebug.sh/ui/components/schedule"
+	"github.com/KevinStirling/scorebug.sh/ui/components/ui"
 )
 
 func main() {
@@ -23,9 +24,10 @@ func main() {
 		}
 	}()
 
-	client := mlbstats.New()
-	m := schedule.NewModel(client)
-	if _, err := tea.NewProgram(m).Run(); err != nil {
+	// client := mlbstats.New()
+	// m := schedule.NewModel(client)
+	tui := ui.NewModel()
+	if _, err := tea.NewProgram(tui).Run(); err != nil {
 		log.Fatal("failed to start", "error", err)
 	}
 }
