@@ -5,6 +5,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"charm.land/log/v2"
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
+	"github.com/KevinStirling/scorebug.sh/ui/components/game"
 	"github.com/KevinStirling/scorebug.sh/ui/components/schedule"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
@@ -13,17 +14,19 @@ import (
 
 type Model struct {
 	schedule schedule.Model
+	game     game.Model
 }
 
 func NewModel() Model {
 	c := mlbstats.New()
 	return Model{
 		schedule: schedule.NewModel(c),
+		game:     game.NewModel(),
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return m.schedule.Init()
+	return tea.Batch(m.schedule.Init(), m.game.Init())
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -41,8 +44,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 	case tea.WindowSizeMsg:
-		log.Info("window width", msg.Width)
-
 		if pages, err := screen.GetSchedulePageSize(scorebug.SB_HEIGHT, scorebug.SB_MARGIN, msg.Height); err != nil {
 			log.Fatal("failed to determine scheudle page size for provided SB_HEIGHT", "SB_HEIGHT", scorebug.SB_HEIGHT)
 		} else {
@@ -50,17 +51,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// forward ui inputs to the child components
-	var cmd tea.Cmd
-	m.schedule, cmd = m.schedule.Update(msg)
-	return m, cmd
+	var scheduleUpdate, gameUpdate tea.Cmd
+	m.schedule, scheduleUpdate = m.schedule.Update(msg)
+	m.game, gameUpdate = m.game.Update(msg)
+	return m, tea.Batch(scheduleUpdate, gameUpdate)
 }
 
 func (m Model) View() tea.View {
 	help := theme.SecondaryText.Render("\n\n n/p ←/→ page • q: quit • l: live • s: scheduled • f: final\n")
-	content := lipgloss.JoinVertical(lipgloss.Top, m.schedule.View(), help)
+	mainContent := lipgloss.JoinHorizontal(lipgloss.Top, m.schedule.View(), m.game.View())
+	content := lipgloss.JoinVertical(lipgloss.Left, mainContent, help)
 
-	v := tea.NewView(theme.Divider.Render(content))
+	v := tea.NewView(theme.MainView.Render(content))
 	v.AltScreen = true
 	return v
 }

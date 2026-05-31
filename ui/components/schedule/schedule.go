@@ -165,7 +165,6 @@ func renderHeader(tabs []string, activeTab int) string {
 		}
 	}
 
-	return primaryText.Render("\nscorebug.sh  ") +
-		strings.Join(parts, secondaryText.Render(" • ")) +
-		secondaryText.Render("\n"+strings.Repeat("‾", scorebug.SB_WIDTH))
+	return primaryText.Render("\n scorebug.sh  ") +
+		strings.Join(parts, secondaryText.Render(" • "))
 }

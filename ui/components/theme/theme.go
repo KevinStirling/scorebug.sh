@@ -7,6 +7,7 @@ import (
 // TODO build the main app theme here to use globally
 var (
 	grey          = lipgloss.Lighten(lipgloss.BrightBlack, .1)
-	Divider       = lipgloss.NewStyle().Padding(0, 1)
+	MainView      = lipgloss.NewStyle()
 	SecondaryText = lipgloss.NewStyle().Foreground(grey)
+	Margin        = 2
 )
