@@ -6,7 +6,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 )
 
 type Model struct {
@@ -32,9 +31,8 @@ func (m Model) View() string {
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	switch msg := msg.(type) {
+	switch msg.(type) {
 	case tea.WindowSizeMsg:
-		m.ContainerWidth = msg.Width - scorebug.SB_WIDTH - OffsetVerticalMargin
 		m.container = m.buildContainer()
 	}
 
