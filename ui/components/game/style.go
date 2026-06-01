@@ -7,5 +7,5 @@ import (
 var (
 	// Global margin offest by the container border width
 	OffsetVerticalMargin  = theme.Margin + 2
-	OffsetHorizonalMargin = theme.Margin + 5
+	OffsetHorizonalMargin = theme.Margin + 2
 )

@@ -34,16 +34,11 @@ func (m Model) View() string {
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		// work out the margin to account for the help content at bottom
-		m.ContainerHeight = msg.Height - OffsetHorizonalMargin
 		m.ContainerWidth = msg.Width - scorebug.SB_WIDTH - OffsetVerticalMargin
 		m.container = m.buildContainer()
 	}
 
-	// placeholder cmd for when we need to pass commands through other components
-	var cmd tea.Cmd
-
-	return m, cmd
+	return m, nil
 }
 
 func (m Model) buildContainer() string {

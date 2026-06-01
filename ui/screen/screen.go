@@ -45,7 +45,7 @@ func GetSchedulePageSize(scorebugHeight int, margin int, windowHeight int) (rows
 		return 0, fmt.Errorf("invalid scorebug dimensions provided")
 	}
 
-	rows = windowHeight / (scorebugHeight + margin)
+	rows = (windowHeight / (scorebugHeight + margin))
 
 	return rows, nil
 }

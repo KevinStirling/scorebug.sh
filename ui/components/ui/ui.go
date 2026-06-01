@@ -13,8 +13,9 @@ import (
 )
 
 type Model struct {
-	schedule schedule.Model
-	game     game.Model
+	schedule        schedule.Model
+	game            game.Model
+	containerHeight int
 }
 
 func NewModel() Model {
@@ -48,6 +49,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			log.Fatal("failed to determine scheudle page size for provided SB_HEIGHT", "SB_HEIGHT", scorebug.SB_HEIGHT)
 		} else {
 			m.schedule.Paginator.PerPage = pages
+			m.containerHeight = msg.Height
+			m.game.ContainerHeight = scorebug.SB_HEIGHT*pages - theme.Margin
+			m.game.ContainerWidth = msg.Width - scorebug.SB_WIDTH - game.OffsetVerticalMargin
 		}
 	}
 
@@ -58,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() tea.View {
-	help := theme.SecondaryText.Render("\n\n n/p ←/→ page • q: quit • l: live • s: scheduled • f: final\n")
+	help := theme.SecondaryText.AlignVertical(lipgloss.Bottom).Render("\n\n n/p ←/→ page • q: quit • l: live • s: scheduled • f: final\n")
 	mainContent := lipgloss.JoinHorizontal(lipgloss.Top, m.schedule.View(), m.game.View())
 	content := lipgloss.JoinVertical(lipgloss.Left, mainContent, help)
 
