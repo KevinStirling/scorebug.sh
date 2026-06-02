@@ -22,15 +22,12 @@ func New() *Client {
 	}
 }
 
-// Fetches a game schedule for a given date of type *time.Time
-func (c *Client) Schedule(date *time.Time) (Schedule, error) {
-	var d time.Time
-	if date == nil {
-		d = time.Now()
-	} else {
-		d = *date
+// Schedule fetches a game schedule for a given date of type *time.Time
+func (c *Client) Schedule(date time.Time) (Schedule, error) {
+	if date.IsZero() {
+		date = determineTime(time.Now())
 	}
-	url := fmt.Sprintf("%s/api/v1/schedule?sportId=1&date=%s&hydrate=linescore,team", c.BaseURL, d.Format("01/02/2006"))
+	url := fmt.Sprintf("%s/api/v1/schedule?sportId=1&date=%s&hydrate=linescore,team", c.BaseURL, date.Format("01/02/2006"))
 
 	resp, err := c.HTTP.Get(url)
 	if err != nil {
@@ -50,10 +47,10 @@ func (c *Client) Schedule(date *time.Time) (Schedule, error) {
 	return out, nil
 }
 
-// Fetches a live game feed for a given gameLink
+// GameFeed Fetches a live game feed for a given gameLink
 // gameLink is pulled from a Schedule struct, each Game type has a Link field
 func (c *Client) GameFeed(gameLink string) (Feed, error) {
-	var url = c.BaseURL + gameLink
+	url := c.BaseURL + gameLink
 
 	resp, err := c.HTTP.Get(url)
 	if err != nil {
@@ -71,4 +68,13 @@ func (c *Client) GameFeed(gameLink string) (Feed, error) {
 	}
 
 	return out, nil
+}
+
+// determineTime determines the current time and returns the date for the game feed
+func determineTime(currentTime time.Time) time.Time {
+	// if current time is before 5am, use yesterday's date
+	if currentTime.Hour() < 5 {
+		return currentTime.AddDate(0, 0, -1)
+	}
+	return currentTime
 }

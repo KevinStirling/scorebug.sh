@@ -17,7 +17,7 @@ import (
 type Model struct {
 	client     ScheduleClient
 	games      []data.ScoreBug
-	date       *time.Time
+	date       time.Time
 	paginator  paginator.Model
 	tabs       []string
 	tabContent [3][]string
@@ -30,7 +30,7 @@ func NewModel(client ScheduleClient) Model {
 	now := time.Now()
 	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
-	bugs := fetchScoreBugs(client, &d)
+	bugs := fetchScoreBugs(client, d)
 
 	p := paginator.New()
 	p.KeyMap = paginator.KeyMap{
@@ -48,7 +48,7 @@ func NewModel(client ScheduleClient) Model {
 		client:    client,
 		paginator: p,
 		games:     bugs,
-		date:      &d,
+		date:      d,
 		tabs:      []string{"live", "scheduled", "final"},
 		activeTab: 0,
 	}
@@ -140,7 +140,7 @@ func (m Model) checkServer() tea.Cmd {
 	}
 }
 
-func fetchScoreBugs(client ScheduleClient, date *time.Time) []data.ScoreBug {
+func fetchScoreBugs(client ScheduleClient, date time.Time) []data.ScoreBug {
 	sched, err := client.Schedule(date)
 	if err != nil {
 		log.Fatal("failed to fetch schedule", "error", err)
