@@ -5,6 +5,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"charm.land/log/v2"
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
+	"github.com/KevinStirling/scorebug.sh/ui/components/game"
 	"github.com/KevinStirling/scorebug.sh/ui/components/schedule"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
