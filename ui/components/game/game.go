@@ -13,11 +13,13 @@ type Model struct {
 	ContainerWidth  int
 	ContainerHeight int
 	container       string
+	enabled         bool
 }
 
 func NewModel() Model {
 	return Model{
 		GameContent: "test",
+		enabled:     false,
 	}
 }
 
@@ -27,6 +29,9 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) View() string {
+	if !m.enabled {
+		return ""
+	}
 	return m.buildContainer()
 }
 
