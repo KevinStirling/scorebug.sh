@@ -19,7 +19,7 @@ type Model struct {
 func NewModel() Model {
 	return Model{
 		GameContent: "test",
-		enabled:     false,
+		enabled:     true,
 	}
 }
 

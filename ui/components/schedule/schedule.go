@@ -103,15 +103,15 @@ func renderTab(bugs []data.ScoreBug, tab int) []string {
 		switch tab {
 		case 0:
 			if bug.Status == "Live" {
-				out = append(out, scorebug.Render(bug))
+				out = append(out, scorebug.Render(bug, scorebug.Border))
 			}
 		case 1:
 			if bug.Status == "Preview" {
-				out = append(out, scorebug.Render(bug))
+				out = append(out, scorebug.Render(bug, scorebug.Border))
 			}
 		case 2:
 			if bug.Status == "Final" || bug.Status == "Other" {
-				out = append(out, scorebug.Render(bug))
+				out = append(out, scorebug.Render(bug, scorebug.Border))
 			}
 		}
 	}

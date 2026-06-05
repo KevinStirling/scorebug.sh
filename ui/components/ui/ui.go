@@ -6,14 +6,14 @@ import (
 	"charm.land/log/v2"
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 	"github.com/KevinStirling/scorebug.sh/ui/components/game"
-	"github.com/KevinStirling/scorebug.sh/ui/components/schedule"
+	"github.com/KevinStirling/scorebug.sh/ui/components/schedulelist"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
 	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
 	"github.com/KevinStirling/scorebug.sh/ui/screen"
 )
 
 type Model struct {
-	schedule        schedule.Model
+	schedule        schedulelist.Model
 	game            game.Model
 	containerHeight int
 }
@@ -21,7 +21,7 @@ type Model struct {
 func NewModel() Model {
 	c := mlbstats.New()
 	return Model{
-		schedule: schedule.NewModel(c),
+		schedule: schedulelist.NewModel(c),
 		game:     game.NewModel(),
 	}
 }
@@ -48,7 +48,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if pages, err := screen.GetSchedulePageSize(scorebug.SB_HEIGHT, scorebug.SB_MARGIN, msg.Height); err != nil {
 			log.Fatal("failed to determine scheudle page size for provided SB_HEIGHT", "SB_HEIGHT", scorebug.SB_HEIGHT)
 		} else {
-			m.schedule.Paginator.PerPage = pages
 			m.containerHeight = msg.Height
 			m.game.ContainerHeight = scorebug.SB_HEIGHT*pages - theme.Margin
 			m.game.ContainerWidth = msg.Width - scorebug.SB_WIDTH - game.OffsetVerticalMargin
