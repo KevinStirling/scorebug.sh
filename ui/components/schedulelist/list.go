@@ -81,6 +81,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if m.err != nil {
+		return listStyle.Render("error: " + m.err.Error() + "\n(retrying...)")
+	}
 	return listStyle.Render(m.list.View())
 }
 
