@@ -31,6 +31,7 @@ type Model struct {
 	date      time.Time
 	err       error
 	tabs      []string
+	Keys      ScheduleKeyMap
 	ActiveTab int
 }
 
@@ -42,12 +43,14 @@ func NewModel(client schedule.ScheduleClient) Model {
 	l := list.New(items, scorebugDelegate{}, 0, 0)
 	l.SetShowTitle(false)
 	l.SetShowStatusBar(false)
+	l.SetShowHelp(false)
 
 	return Model{
 		list:      l,
 		client:    client,
 		date:      d,
 		tabs:      []string{"live", "scheduled", "final"},
+		Keys:      keys,
 		ActiveTab: 0,
 	}
 
@@ -57,11 +60,17 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 }
 
+func (m *Model) SetSize(width, height int) {
+	h, v := listStyle.GetFrameSize()
+	m.list.SetSize(width-h, height-v)
+}
+
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		h, v := listStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+	// case tea.WindowSizeMsg:
+	// 	h, v := listStyle.GetFrameSize()
+	// 	// TODO fix hardoded bottom margin for help menu
+	// 	m.list.SetSize(msg.Width-h, (msg.Height-v)-3)
 	case scorebugMsg:
 		m.games = msg
 		m.err = nil
@@ -73,6 +82,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, nil
 	case tickMsg:
 		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
+
 	}
 
 	var cmd tea.Cmd
@@ -101,6 +111,7 @@ func fetchScoreBugs(client schedule.ScheduleClient, date time.Time) ([]data.Scor
 	return data.BuildScoreBugs(snaps), nil
 }
 
+// Returns an array of ScoreBugItems for a given tab
 func buildTab(bugs []data.ScoreBug, tab int) []list.Item {
 	items := make([]list.Item, 0, len(bugs))
 	for _, bug := range bugs {
