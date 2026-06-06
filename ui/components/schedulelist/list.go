@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/log/v2"
@@ -67,10 +68,6 @@ func (m *Model) SetSize(width, height int) {
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	// case tea.WindowSizeMsg:
-	// 	h, v := listStyle.GetFrameSize()
-	// 	// TODO fix hardoded bottom margin for help menu
-	// 	m.list.SetSize(msg.Width-h, (msg.Height-v)-3)
 	case scorebugMsg:
 		m.games = msg
 		m.err = nil
@@ -82,7 +79,16 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m, nil
 	case tickMsg:
 		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
-
+	case tea.KeyPressMsg:
+		switch {
+		case key.Matches(msg, m.Keys.FilterLive):
+			m.ActiveTab = 0
+		case key.Matches(msg, m.Keys.FilterScheduled):
+			m.ActiveTab = 1
+		case key.Matches(msg, m.Keys.FilterFinal):
+			m.ActiveTab = 2
+		}
+		return m, m.list.SetItems(buildTab(m.games, m.ActiveTab))
 	}
 
 	var cmd tea.Cmd

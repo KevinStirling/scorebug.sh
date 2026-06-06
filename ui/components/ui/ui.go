@@ -56,12 +56,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "l":
-			m.schedule.ActiveTab = 0
-		case "s":
-			m.schedule.ActiveTab = 1
-		case "f":
-			m.schedule.ActiveTab = 2
 		}
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
@@ -80,12 +74,4 @@ func (m Model) View() tea.View {
 		body, m.help.View(m.schedule.Keys)))
 	v.AltScreen = true
 	return v
-	// mainContent := containerStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, m.schedule.View(), m.game.View()))
-	// // content := lipgloss.JoinVertical(lipgloss.Left, mainContent, m.help.View(m.schedule.Keys))
-	// // content := lipgloss.JoinVertical(lipgloss.Left, mainContent, m.help.View(m.schedule.Keys))
-	//
-	// app := lipgloss.JoinHorizontal(lipgloss.Top, mainContent, m.help.View(m.schedule.Keys))
-	// v := tea.NewView(theme.MainView.Render(app))
-	// v.AltScreen = true
-	// return v
 }
