@@ -8,7 +8,7 @@ import (
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 	"github.com/KevinStirling/scorebug.sh/ui/components/game"
 	"github.com/KevinStirling/scorebug.sh/ui/components/header"
-	"github.com/KevinStirling/scorebug.sh/ui/components/schedulelist"
+	"github.com/KevinStirling/scorebug.sh/ui/components/schedule"
 	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
 )
 
@@ -16,7 +16,7 @@ type Model struct {
 	width, height int
 
 	header   header.Model
-	schedule schedulelist.Model
+	schedule schedule.Model
 	game     game.Model
 	help     help.Model
 }
@@ -24,7 +24,7 @@ type Model struct {
 func NewModel() Model {
 	c := mlbstats.New()
 	return Model{
-		schedule: schedulelist.NewModel(c),
+		schedule: schedule.NewModel(c),
 		game:     game.NewModel(),
 		help:     help.New(),
 		header:   header.New(),
@@ -67,7 +67,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		return m.layout(), nil
-	case schedulelist.TabChangedMsg:
+	case schedule.TabChangedMsg:
 		m.header.ActiveTab = int(msg)
 	}
 

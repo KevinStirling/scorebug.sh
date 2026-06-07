@@ -1,171 +1,173 @@
 package schedule
 
 import (
-	"log"
-	"strings"
+	"fmt"
 	"time"
 
 	"charm.land/bubbles/v2/key"
-	"charm.land/bubbles/v2/paginator"
+	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
+	"charm.land/log/v2"
 	"github.com/KevinStirling/scorebug.sh/data"
 	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
-	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
-	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
 )
 
-type Model struct {
-	client     ScheduleClient
-	games      []data.ScoreBug
-	date       time.Time
-	Paginator  paginator.Model
-	tabs       []string
-	tabContent [3][]string
-	ActiveTab  int
+type ScorebugItem struct {
+	bug data.ScoreBug
+}
+
+func (s ScorebugItem) FilterValue() string { return s.bug.HomeAbbr + " " + s.bug.AwayAbbr }
+
+type TabChangedMsg int
+
+func tabChanged(t int) tea.Cmd {
+	return func() tea.Msg { return TabChangedMsg(t) }
 }
 
 type tickMsg time.Time
+type scorebugMsg []data.ScoreBug
+type errMsg struct{ err error }
+
+func (e errMsg) Error() string { return e.err.Error() }
+
+type Model struct {
+	list      list.Model
+	client    ScheduleClient
+	games     []data.ScoreBug
+	date      time.Time
+	err       error
+	tabs      []string
+	Keys      ScheduleKeyMap
+	ActiveTab int
+}
+
+func (m Model) IsFiltering() bool { return m.list.SettingFilter() }
 
 func NewModel(client ScheduleClient) Model {
 	now := time.Now()
 	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
-	bugs := fetchScoreBugs(client, d)
+	items := make([]list.Item, 0)
+	l := list.New(items, scorebugDelegate{}, 0, 0)
+	l.SetShowTitle(false)
+	l.SetShowStatusBar(false)
+	l.SetShowHelp(false)
 
-	p := paginator.New()
-	p.KeyMap = paginator.KeyMap{
-		NextPage: key.NewBinding(key.WithKeys("pgright", "n")),
-		PrevPage: key.NewBinding(key.WithKeys("pgleft", "p")),
-	}
-	p.Type = paginator.Dots
-
-	// TODO fix adaptiveActive color... don't think i'm using it right
-	p.ActiveDot = lipgloss.NewStyle().Foreground(adaptiveActive).Render("•")
-	p.InactiveDot = lipgloss.NewStyle().Foreground(adaptiveInactive).Render("•")
-	p.SetTotalPages(len(bugs))
 	return Model{
+		list:      l,
 		client:    client,
-		Paginator: p,
-		games:     bugs,
 		date:      d,
 		tabs:      []string{"live", "scheduled", "final"},
+		Keys:      keys,
 		ActiveTab: 0,
 	}
+
 }
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 }
 
+func (m *Model) SetSize(width, height int) {
+	h, v := listStyle.GetFrameSize()
+	m.list.SetSize(width-h, height-v)
+}
+
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	var cmd tea.Cmd
 	switch msg := msg.(type) {
-
-	case []data.ScoreBug:
+	case scorebugMsg:
 		m.games = msg
-		for i := range m.tabs {
-			m.tabContent[i] = renderTab(m.games, i)
-		}
-		m.syncPaginator()
+		m.err = nil
+		cmd := m.list.SetItems(buildTab(msg, m.ActiveTab))
+		return m, cmd
+	case errMsg:
+		m.err = msg.err
+		log.Error("schedule", "error", m.err)
 		return m, nil
-
 	case tickMsg:
-		m.syncPaginator()
 		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
-
+	case tea.KeyPressMsg:
+		if m.list.SettingFilter() {
+			var cmd tea.Cmd
+			m.list, cmd = m.list.Update(msg)
+			return m, cmd
+		}
+		switch {
+		case key.Matches(msg, m.Keys.FilterLive):
+			m.ActiveTab = 0
+		case key.Matches(msg, m.Keys.FilterScheduled):
+			m.ActiveTab = 1
+		case key.Matches(msg, m.Keys.FilterFinal):
+			m.ActiveTab = 2
+		default:
+			var cmd tea.Cmd
+			m.list, cmd = m.list.Update(msg)
+			return m, cmd
+		}
+		return m, tea.Batch(
+			m.list.SetItems(buildTab(m.games, m.ActiveTab)),
+			tabChanged(m.ActiveTab),
+		)
 	}
-	m.syncPaginator()
-	m.Paginator, cmd = m.Paginator.Update(msg)
+
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
 	return m, cmd
 }
 
 func (m Model) View() string {
-	g := renderTab(m.games, m.ActiveTab)
-	var b strings.Builder
-	b.WriteString(renderHeader(m.tabs, m.ActiveTab))
-	start, end := m.Paginator.GetSliceBounds(len(g))
-	for _, item := range g[start:end] {
-		for range scorebug.SB_MARGIN {
-			b.WriteString("\n")
-		}
-		b.WriteString(item)
+	if m.err != nil {
+		return listStyle.Render("error: " + m.err.Error() + "\n(retrying...)")
 	}
-	b.WriteString("\n")
-	b.WriteString(m.Paginator.View())
-
-	return divider.Render(b.String())
+	return listStyle.Render(m.list.View())
 }
 
-// Renders a string slice of scorebugs for a given tab
-func renderTab(bugs []data.ScoreBug, tab int) []string {
-	out := make([]string, 0, len(bugs))
-	for _, bug := range bugs {
-		switch tab {
-		case 0:
-			if bug.Status == "Live" {
-				out = append(out, scorebug.Render(bug, scorebug.Border))
-			}
-		case 1:
-			if bug.Status == "Preview" {
-				out = append(out, scorebug.Render(bug, scorebug.Border))
-			}
-		case 2:
-			if bug.Status == "Final" || bug.Status == "Other" {
-				out = append(out, scorebug.Render(bug, scorebug.Border))
-			}
-		}
-	}
-	return out
-}
-
-func tickAfter(d time.Duration) tea.Cmd {
-	return tea.Tick(d, func(t time.Time) tea.Msg { return tickMsg(t) })
-}
-
-func (m Model) checkServer() tea.Cmd {
-	return func() tea.Msg {
-		return fetchScoreBugs(m.client, m.date)
-	}
-}
-
-func fetchScoreBugs(client ScheduleClient, date time.Time) []data.ScoreBug {
+func fetchScoreBugs(client ScheduleClient, date time.Time) ([]data.ScoreBug, error) {
 	sched, err := client.Schedule(date)
 	if err != nil {
-		log.Fatal("failed to fetch schedule", "error", err)
+		return nil, fmt.Errorf("failed to fetch schedule: %w", err)
 	}
 
 	snaps, err := snapshots.Build(client, sched)
 	if err != nil {
-		log.Fatal("failed to build snapshots", "error", err)
+		return nil, fmt.Errorf("failed to build snapshots: %w", err)
 	}
 
-	return data.BuildScoreBugs(snaps)
+	return data.BuildScoreBugs(snaps), nil
 }
 
-func (m *Model) syncPaginator() {
-	content := m.tabContent[m.ActiveTab]
-	if len(content) == 0 {
-		m.Paginator.TotalPages = 1
-		m.Paginator.Page = 0
-		return
-	}
-	m.Paginator.SetTotalPages(len(content))
-	if m.Paginator.Page > m.Paginator.TotalPages-1 {
-		m.Paginator.Page = m.Paginator.TotalPages - 1
-	}
-}
-
-func renderHeader(tabs []string, activeTab int) string {
-	parts := make([]string, len(tabs))
-	for i, t := range tabs {
-		if i == activeTab {
-			parts[i] = theme.AccentText.Render(t)
-		} else {
-			parts[i] = theme.AccentText.Render(t[:1]) + secondaryText.Render(t[1:])
+// Returns an array of ScoreBugItems for a given tab
+func buildTab(bugs []data.ScoreBug, tab int) []list.Item {
+	items := make([]list.Item, 0, len(bugs))
+	for _, bug := range bugs {
+		switch tab {
+		case 0:
+			if bug.Status == "Live" {
+				items = append(items, ScorebugItem{bug: bug})
+			}
+		case 1:
+			if bug.Status == "Preview" {
+				items = append(items, ScorebugItem{bug: bug})
+			}
+		case 2:
+			if bug.Status == "Final" || bug.Status == "Other" {
+				items = append(items, ScorebugItem{bug: bug})
+			}
 		}
 	}
+	return items
+}
 
-	return theme.PrimaryText.Render("\n scorebug.sh  ") +
-		strings.Join(parts, secondaryText.Render(" • "))
+func (m Model) checkServer() tea.Cmd {
+	return func() tea.Msg {
+		bugs, err := fetchScoreBugs(m.client, m.date)
+		if err != nil {
+			return errMsg{err}
+		}
+		return scorebugMsg(bugs)
+	}
+}
+
+func tickAfter(d time.Duration) tea.Cmd {
+	return tea.Tick(d, func(t time.Time) tea.Msg { return tickMsg(t) })
 }
