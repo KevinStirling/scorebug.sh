@@ -24,8 +24,8 @@ type Model struct {
 func NewModel() Model {
 	c := mlbstats.New()
 	return Model{
-		schedule: schedule.NewModel(c),
-		game:     game.NewModel(),
+		schedule: schedule.New(c),
+		game:     game.New(),
 		help:     help.New(),
 		header:   header.New(),
 	}

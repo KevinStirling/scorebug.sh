@@ -41,9 +41,7 @@ type Model struct {
 	ActiveTab int
 }
 
-func (m Model) IsFiltering() bool { return m.list.SettingFilter() }
-
-func NewModel(client ScheduleClient) Model {
+func New(client ScheduleClient) Model {
 	now := time.Now()
 	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
@@ -66,11 +64,6 @@ func NewModel(client ScheduleClient) Model {
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.checkServer(), tickAfter(10*time.Second))
-}
-
-func (m *Model) SetSize(width, height int) {
-	h, v := listStyle.GetFrameSize()
-	m.list.SetSize(width-h, height-v)
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -122,6 +115,17 @@ func (m Model) View() string {
 	return listStyle.Render(m.list.View())
 }
 
+func (m Model) IsFiltering() bool { return m.list.SettingFilter() }
+
+// SetSize sets the size of the list to the given width and height while
+// accounting for the size of the frame it is inside of
+func (m *Model) SetSize(width, height int) {
+	h, v := listStyle.GetFrameSize()
+	m.list.SetSize(width-h, height-v)
+}
+
+// fetchScoreBugs retrieves the scorebugs based on the given date, and
+// builds snapshots for games that with the "Live" status
 func fetchScoreBugs(client ScheduleClient, date time.Time) ([]data.ScoreBug, error) {
 	sched, err := client.Schedule(date)
 	if err != nil {

@@ -26,7 +26,7 @@ type Model struct {
 	enabled         bool
 }
 
-func NewModel() Model {
+func New() Model {
 	return Model{
 		GameContent: "test",
 		enabled:     false,
