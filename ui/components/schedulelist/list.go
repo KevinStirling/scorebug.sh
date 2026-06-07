@@ -19,6 +19,12 @@ type ScorebugItem struct {
 
 func (s ScorebugItem) FilterValue() string { return s.bug.HomeAbbr + " " + s.bug.AwayAbbr }
 
+type TabChangedMsg int
+
+func tabChanged(t int) tea.Cmd {
+	return func() tea.Msg { return TabChangedMsg(t) }
+}
+
 type tickMsg time.Time
 type scorebugMsg []data.ScoreBug
 type errMsg struct{ err error }
@@ -87,8 +93,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.ActiveTab = 1
 		case key.Matches(msg, m.Keys.FilterFinal):
 			m.ActiveTab = 2
+		default:
+			var cmd tea.Cmd
+			m.list, cmd = m.list.Update(msg)
+			return m, cmd
 		}
-		return m, m.list.SetItems(buildTab(m.games, m.ActiveTab))
+		return m, tea.Batch(
+			m.list.SetItems(buildTab(m.games, m.ActiveTab)),
+			tabChanged(m.ActiveTab),
+		)
 	}
 
 	var cmd tea.Cmd

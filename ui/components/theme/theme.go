@@ -8,6 +8,8 @@ import (
 var (
 	grey          = lipgloss.Lighten(lipgloss.BrightBlack, .1)
 	MainView      = lipgloss.NewStyle()
+	PrimaryText   = lipgloss.NewStyle().Foreground(lipgloss.Magenta)
 	SecondaryText = lipgloss.NewStyle().Foreground(grey)
+	AccentText    = lipgloss.NewStyle().Foreground(lipgloss.BrightYellow)
 	Margin        = 2
 )

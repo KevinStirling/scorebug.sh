@@ -7,13 +7,15 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 	"github.com/KevinStirling/scorebug.sh/ui/components/game"
+	"github.com/KevinStirling/scorebug.sh/ui/components/header"
 	"github.com/KevinStirling/scorebug.sh/ui/components/schedulelist"
+	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
 )
 
 type Model struct {
 	width, height int
 
-	header   string
+	header   header.Model
 	schedule schedulelist.Model
 	game     game.Model
 	help     help.Model
@@ -25,6 +27,7 @@ func NewModel() Model {
 		schedule: schedulelist.NewModel(c),
 		game:     game.NewModel(),
 		help:     help.New(),
+		header:   header.New(),
 	}
 }
 
@@ -34,8 +37,7 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) layout() Model {
 	m.help.SetWidth(m.width)
-	// add header here, and swap schedule.Keys with context aware keys
-	chrome := lipgloss.Height(m.header) + lipgloss.Height(m.help.View(m.schedule.Keys))
+	chrome := lipgloss.Height(theme.MainView.Render(m.header.Render())) + lipgloss.Height(m.help.View(m.schedule.Keys))
 
 	bodyH := m.height - chrome
 	leftW := m.width / 2
@@ -60,6 +62,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		return m.layout(), nil
+	case schedulelist.TabChangedMsg:
+		m.header.ActiveTab = int(msg)
 	}
 
 	var scheduleUpdate, gameUpdate tea.Cmd
@@ -69,9 +73,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() tea.View {
+	header := lipgloss.JoinHorizontal(lipgloss.Top, m.header.Render())
 	body := lipgloss.JoinHorizontal(lipgloss.Top, m.schedule.View(), m.game.View())
+	main := lipgloss.JoinVertical(lipgloss.Left, header, body)
 	v := tea.NewView(lipgloss.JoinVertical(lipgloss.Left,
-		body, m.help.View(m.schedule.Keys)))
+		main, m.help.View(m.schedule.Keys)))
 	v.AltScreen = true
 	return v
 }
