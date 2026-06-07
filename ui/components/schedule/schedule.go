@@ -12,6 +12,7 @@ import (
 	"github.com/KevinStirling/scorebug.sh/data"
 	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
 	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
+	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
 )
 
 type Model struct {
@@ -159,12 +160,12 @@ func renderHeader(tabs []string, activeTab int) string {
 	parts := make([]string, len(tabs))
 	for i, t := range tabs {
 		if i == activeTab {
-			parts[i] = accentText.Render(t)
+			parts[i] = theme.AccentText.Render(t)
 		} else {
-			parts[i] = accentText.Render(t[:1]) + secondaryText.Render(t[1:])
+			parts[i] = theme.AccentText.Render(t[:1]) + secondaryText.Render(t[1:])
 		}
 	}
 
-	return primaryText.Render("\n scorebug.sh  ") +
+	return theme.PrimaryText.Render("\n scorebug.sh  ") +
 		strings.Join(parts, secondaryText.Render(" • "))
 }

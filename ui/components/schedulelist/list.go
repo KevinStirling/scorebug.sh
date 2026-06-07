@@ -42,6 +42,8 @@ type Model struct {
 	ActiveTab int
 }
 
+func (m Model) IsFiltering() bool { return m.list.SettingFilter() }
+
 func NewModel(client schedule.ScheduleClient) Model {
 	now := time.Now()
 	d := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
@@ -86,6 +88,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tickMsg:
 		return m, tea.Batch(m.checkServer(), tickAfter(10*time.Second))
 	case tea.KeyPressMsg:
+		if m.list.SettingFilter() {
+			var cmd tea.Cmd
+			m.list, cmd = m.list.Update(msg)
+			return m, cmd
+		}
 		switch {
 		case key.Matches(msg, m.Keys.FilterLive):
 			m.ActiveTab = 0

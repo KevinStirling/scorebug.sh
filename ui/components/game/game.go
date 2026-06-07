@@ -11,7 +11,8 @@ import (
 var containerStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
 	Foreground(lipgloss.Green).
-	AlignHorizontal(lipgloss.Left)
+	AlignHorizontal(lipgloss.Left).
+	Margin(1, 0)
 
 var contentStyle = lipgloss.NewStyle().
 	Height(1).
@@ -28,7 +29,7 @@ type Model struct {
 func NewModel() Model {
 	return Model{
 		GameContent: "test",
-		enabled:     true,
+		enabled:     false,
 	}
 }
 

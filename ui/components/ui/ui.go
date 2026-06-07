@@ -37,6 +37,7 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) layout() Model {
 	m.help.SetWidth(m.width)
+	// add header here, and swap schedule.Keys with context aware keys
 	chrome := lipgloss.Height(theme.MainView.Render(m.header.Render())) + lipgloss.Height(m.help.View(m.schedule.Keys))
 
 	bodyH := m.height - chrome
@@ -51,9 +52,13 @@ func (m Model) layout() Model {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
+		if m.schedule.IsFiltering() {
+			break
+		}
 		switch {
 		case key.Matches(msg, m.schedule.Keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
+			return m.layout(), nil
 		}
 		switch msg.String() {
 		case "q", "ctrl+c":
