@@ -6,10 +6,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
-	"github.com/KevinStirling/scorebug.sh/ui/components/game"
-	"github.com/KevinStirling/scorebug.sh/ui/components/header"
-	"github.com/KevinStirling/scorebug.sh/ui/components/schedule"
-	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/game"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/header"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/schedule"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/theme"
 )
 
 type Model struct {

@@ -7,7 +7,7 @@ import (
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/log/v2"
-	"github.com/KevinStirling/scorebug.sh/ui/components/scorebug"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/scorebug"
 )
 
 type scorebugDelegate struct{}

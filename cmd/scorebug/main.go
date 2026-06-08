@@ -6,7 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/log/v2"
-	"github.com/KevinStirling/scorebug.sh/ui/components/ui"
+	"github.com/KevinStirling/scorebug.sh/internal/ui"
 )
 
 func main() {

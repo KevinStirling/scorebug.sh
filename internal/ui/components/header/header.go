@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/KevinStirling/scorebug.sh/ui/components/theme"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/theme"
 )
 
 type Model struct {

@@ -3,7 +3,7 @@
 
 Live MLB scores in your terminal
 
-![ScreenShot](sb_preview.png)
+![ScreenShot](assets/sb_preview.png)
 
 
 > [!WARNING]
@@ -21,13 +21,16 @@ scoop bucket add kevinstirling https://github.com/kevinstirling/scoop-bucket.git
 scoop install kevinstirling/scorebug
 ```
 
-**Go toolchain**
+**go toolchain**
 ```
 go install github.com/KevinStirling/scorebug.sh/cmd/scorebug@latest
 ```
 
 # Usage
-Right now only a very basic command `scorebug` is available. Running this command in your terminal will give you all games scheduled for the current day.
+Run `scorebug` in your terminal
 
+Filter games by status (live/scheduled/final) with `l/s/f`
+
+Filter games by team abbreviation (NYY, LAD, BOS, etc) with `/` to open the search bar
 # Contributing
 We use [freight](https://freightapp.co/docs/installation) to automate actions off git hooks. After cloning, install freight via homebrew or curl, Then run `./freight init`
