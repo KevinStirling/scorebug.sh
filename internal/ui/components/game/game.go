@@ -9,20 +9,17 @@ import (
 
 var containerStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
-	Foreground(lipgloss.Green).
 	Margin(1, 1, 2, 1)
 
 type Model struct {
-	GameContent     string
-	ContainerWidth  int
-	ContainerHeight int
-	viewport        viewport.Model
+	content  string
+	viewport viewport.Model
 }
 
 func New() Model {
 	return Model{
-		GameContent: "test",
-		viewport:    viewport.New(),
+		content:  "test",
+		viewport: viewport.New(),
 	}
 }
 
@@ -37,16 +34,22 @@ func (m *Model) SetSize(width, height int) {
 
 func (m Model) View() string {
 	m.viewport.Style = containerStyle
-	m.viewport.SetContent(m.GameContent)
+	m.viewport.SetContent(m.content)
 	return m.viewport.View()
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case schedule.GameSelectedMsg:
-		m.GameContent = msg.Bug.Link
+		m.content = buildHeader(msg)
 	}
 	var cmd tea.Cmd
 	m.viewport, cmd = m.viewport.Update(msg)
 	return m, cmd
+}
+
+func buildHeader(data schedule.GameSelectedMsg) string {
+	header := data.Bug.AwayAbbr + " @ " + data.Bug.HomeAbbr
+
+	return headerStyle.Render(header)
 }

@@ -38,6 +38,8 @@ type ScoreBug struct {
 	BatterAvg   string
 	PitcherName string
 	PitchCount  int
+
+	Feed mlbstats.Feed
 }
 
 func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
@@ -78,6 +80,7 @@ func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
 
 			setRunners(feed, &bug)
 			setCurrentBP(feed, &bug)
+			bug.Feed = *s.Feed
 		}
 		out = append(out, bug)
 	}
