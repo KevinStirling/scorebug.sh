@@ -24,8 +24,8 @@ func Test_determineTime(t *testing.T) {
 	year, month, day := time.Now().Date()
 	tt := map[string]test{
 		"current date - equal": {
-			currentDate:  time.Now(),
-			expectedDate: time.Now(),
+			currentDate:  time.Date(year, month, day, 12, 0, 0, 0, time.Now().Location()),
+			expectedDate: time.Date(year, month, day, 12, 0, 0, 0, time.Now().Location()),
 			comparison:   sameDay,
 		},
 		"current date - pre 5am": {
