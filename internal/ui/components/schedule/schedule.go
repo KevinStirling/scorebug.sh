@@ -18,6 +18,10 @@ type ScorebugItem struct {
 
 func (s ScorebugItem) FilterValue() string { return s.bug.HomeAbbr + " " + s.bug.AwayAbbr }
 
+type GameSelectedMsg struct {
+	Bug data.ScoreBug
+}
+
 type TabChangedMsg int
 
 func tabChanged(t int) tea.Cmd {
@@ -92,6 +96,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.ActiveTab = 1
 		case key.Matches(msg, m.Keys.FilterFinal):
 			m.ActiveTab = 2
+		case key.Matches(msg, m.Keys.Select):
+			item, ok := m.list.SelectedItem().(ScorebugItem)
+			if ok {
+				return m, m.itemSelected(item)
+			}
+
 		default:
 			var cmd tea.Cmd
 			m.list, cmd = m.list.Update(msg)
@@ -113,6 +123,12 @@ func (m Model) View() string {
 		return listStyle.Render("error: " + m.err.Error() + "\n(retrying...)")
 	}
 	return listStyle.Render(m.list.View())
+}
+
+func (m Model) itemSelected(item ScorebugItem) tea.Cmd {
+	return func() tea.Msg {
+		return GameSelectedMsg{Bug: item.bug}
+	}
 }
 
 func (m Model) IsFiltering() bool { return m.list.SettingFilter() }

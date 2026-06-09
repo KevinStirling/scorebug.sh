@@ -4,12 +4,13 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/schedule"
 )
 
 var containerStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
 	Foreground(lipgloss.Green).
-	Margin(1, 1)
+	Margin(1, 1, 2, 1)
 
 type Model struct {
 	GameContent     string
@@ -41,11 +42,11 @@ func (m Model) View() string {
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	switch msg.(type) {
-	case Model:
-		m.viewport.SetContent(m.GameContent)
+	switch msg := msg.(type) {
+	case schedule.GameSelectedMsg:
+		m.GameContent = msg.Bug.Link
 	}
 	var cmd tea.Cmd
 	m.viewport, cmd = m.viewport.Update(msg)
-	return m, tea.Batch(cmd)
+	return m, cmd
 }
