@@ -9,6 +9,7 @@ import (
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/game"
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/header"
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/schedule"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/scorebug"
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/theme"
 )
 
@@ -41,7 +42,7 @@ func (m Model) layout() Model {
 	chrome := lipgloss.Height(theme.MainView.Render(m.header.Render())) + lipgloss.Height(m.help.View(m.schedule.Keys))
 
 	bodyH := m.height - chrome
-	leftW := m.width / 2
+	leftW := scorebug.SB_WIDTH
 	rightW := m.width - leftW
 
 	m.schedule.SetSize(leftW, bodyH)
