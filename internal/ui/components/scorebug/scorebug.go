@@ -13,11 +13,11 @@ import (
 const (
 	SB_WIDTH  = 58
 	SB_HEIGHT = 5
-	SB_MARGIN = 1
+	SB_MARGIN = 0
 )
 
 // Render a scorebug from the data.ScoreBug
-func Render(game data.ScoreBug) string {
+func Render(game data.ScoreBug, style lipgloss.Style) string {
 	rows := [][]string{
 		{
 			game.HomeAbbr,
@@ -46,7 +46,7 @@ func Render(game data.ScoreBug) string {
 		Width(SB_WIDTH).
 		Height(SB_HEIGHT).
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Green)).
+		BorderStyle(style).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch col {
 			case 2:

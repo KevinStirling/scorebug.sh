@@ -61,9 +61,9 @@ func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
 			InningTop:    setInningArrow(g.Linescore.InningState, "Top"),
 			InningBottom: setInningArrow(g.Linescore.InningState, "Bottom"),
 
-			Out1: SetOut(g.Linescore.Outs, 1),
-			Out2: SetOut(g.Linescore.Outs, 2),
-			Out3: SetOut(g.Linescore.Outs, 3),
+			Out1: setOut(g.Linescore.Outs, 1),
+			Out2: setOut(g.Linescore.Outs, 2),
+			Out3: setOut(g.Linescore.Outs, 3),
 
 			// Defaults
 			On1B: "◇", On2B: "◇", On3B: "◇",
@@ -89,23 +89,23 @@ func playerKey(id int) string { return fmt.Sprintf("ID%d", id) }
 func setRunners(f mlbstats.Feed, bug *ScoreBug) {
 	offense := f.LiveData.Linescore.Offense
 
-	bug.On1B = RunnerOn(offense.First != nil)
-	bug.On2B = RunnerOn(offense.Second != nil)
-	bug.On3B = RunnerOn(offense.Third != nil)
+	bug.On1B = runnerOn(offense.First != nil)
+	bug.On2B = runnerOn(offense.Second != nil)
+	bug.On3B = runnerOn(offense.Third != nil)
+}
+
+func splitName(name string) string {
+	s := strings.Split(name, " ")
+	if len(s) >= 2 {
+		return strings.Join(s[1:], " ")
+	}
+
+	return name
 }
 
 func setCurrentBP(f mlbstats.Feed, bug *ScoreBug) {
 	b := f.LiveData.Plays.CurrentPlay.MatchUp.Batter
 	p := f.LiveData.Plays.CurrentPlay.MatchUp.Pitcher
-
-	splitName := func(name string) string {
-		s := strings.Split(name, " ")
-		if len(s) >= 2 {
-			return s[1]
-		}
-
-		return name
-	}
 
 	bug.BatterName, bug.PitcherName = splitName(b.FullName), splitName(p.FullName)
 

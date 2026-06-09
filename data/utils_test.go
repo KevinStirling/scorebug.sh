@@ -1,9 +1,7 @@
-package data_test
+package data
 
 import (
 	"testing"
-
-	"github.com/KevinStirling/scorebug.sh/data"
 )
 
 func TestRunnerOn(t *testing.T) {
@@ -18,7 +16,7 @@ func TestRunnerOn(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := data.RunnerOn(tc.on)
+			got := runnerOn(tc.on)
 			if got != tc.desired {
 				t.Errorf("RunnerOn(%v) = %s, want %s", tc.on, got, tc.desired)
 			}
@@ -42,9 +40,33 @@ func TestSetOut(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := data.SetOut(tc.outs, tc.pos)
+			got := setOut(tc.outs, tc.pos)
 			if got != tc.desired {
 				t.Errorf("SetOut(%d, %d) = %s, want %s", tc.outs, tc.pos, got, tc.desired)
+			}
+		})
+	}
+}
+
+func TestSetInningArrow(t *testing.T) {
+	cases := []struct {
+		name     string
+		state    string
+		position string
+		desired  string
+	}{
+		{"Top inning", "Top", "Top", INNING_TOP},
+		{"No match", "Top", "Bottom", ""},
+		{"Bottom inning", "Bottom", "Bottom", INNING_BOTTOM},
+		{"Invalid state", "invalid", "Top", ""},
+		{"Empty state", "", "Bottom", ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := setInningArrow(tc.state, tc.position)
+			if got != tc.desired {
+				t.Errorf("setInningArrow(%s, %s) = %s, want %s", tc.state, tc.position, got, tc.desired)
 			}
 		})
 	}

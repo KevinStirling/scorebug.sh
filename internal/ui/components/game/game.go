@@ -8,15 +8,25 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+var containerStyle = lipgloss.NewStyle().
+	Border(lipgloss.RoundedBorder()).
+	Foreground(lipgloss.Green).
+	AlignHorizontal(lipgloss.Left).
+	Margin(1, 0)
+
+var contentStyle = lipgloss.NewStyle().
+	Height(1).
+	Width(4).
+	Foreground(lipgloss.Magenta)
+
 type Model struct {
 	GameContent     string
 	ContainerWidth  int
 	ContainerHeight int
-	container       string
 	enabled         bool
 }
 
-func NewModel() Model {
+func New() Model {
 	return Model{
 		GameContent: "test",
 		enabled:     false,
@@ -24,8 +34,13 @@ func NewModel() Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	// could use this to get more game details upon selection
 	return tea.Batch()
+}
+
+func (m *Model) SetSize(width, height int) {
+	h, v := containerStyle.GetFrameSize()
+	m.ContainerWidth = width - h
+	m.ContainerHeight = height - v
 }
 
 func (m Model) View() string {
@@ -36,29 +51,18 @@ func (m Model) View() string {
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	switch msg.(type) {
-	case tea.WindowSizeMsg:
-		m.container = m.buildContainer()
-	}
-
 	return m, nil
 }
 
 func (m Model) buildContainer() string {
 	darkerField := newField(m.ContainerHeight, m.ContainerWidth, lipgloss.BrightBlack)
 	// lighterField := newField(17, 43, lipgloss.Magenta)
-	gameContent := lipgloss.NewStyle().Height(1).Width(4).Foreground(lipgloss.Magenta).Render(m.GameContent)
+	gameContent := contentStyle.Render(m.GameContent)
 	bg := lipgloss.NewLayer(darkerField)
 	fg := lipgloss.NewLayer(gameContent)
 	comp := lipgloss.NewCompositor(bg, fg)
 
-	container := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		Foreground(lipgloss.Green).
-		AlignHorizontal(lipgloss.Left).
-		MarginTop(2).
-		Render(comp.Render())
-	return container
+	return containerStyle.Render(comp.Render())
 }
 
 // newField fills a rectangular area with a given character in a given color.

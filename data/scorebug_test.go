@@ -1,9 +1,8 @@
-package data_test
+package data
 
 import (
 	"testing"
 
-	"github.com/KevinStirling/scorebug.sh/data"
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
 	"github.com/KevinStirling/scorebug.sh/internal/snapshots"
 )
@@ -20,7 +19,7 @@ func TestBuildScoreBugs_PreviewGame(t *testing.T) {
 		Feed: nil, // no feed for preview games
 	}
 
-	bugs := data.BuildScoreBugs([]snapshots.GameSnapshot{snap})
+	bugs := BuildScoreBugs([]snapshots.GameSnapshot{snap})
 
 	if len(bugs) != 1 {
 		t.Fatalf("expected 1 bug, got %d", len(bugs))
@@ -74,7 +73,7 @@ func TestBuildScoreBugs_LiveGame_RunnersOnBase(t *testing.T) {
 				Feed: &feed,
 			}
 
-			bugs := data.BuildScoreBugs([]snapshots.GameSnapshot{snap})
+			bugs := BuildScoreBugs([]snapshots.GameSnapshot{snap})
 			bug := bugs[0]
 
 			if bug.On1B != tc.want1B {
@@ -130,7 +129,7 @@ func TestBuildScoreBugs_LiveGame_CountAndOuts(t *testing.T) {
 		Feed: &feed,
 	}
 
-	bugs := data.BuildScoreBugs([]snapshots.GameSnapshot{snap})
+	bugs := BuildScoreBugs([]snapshots.GameSnapshot{snap})
 	bug := bugs[0]
 
 	if bug.Balls != 3 {
@@ -215,7 +214,7 @@ func TestBuildScoreBugs_LiveGame_Score(t *testing.T) {
 		Feed: &feed,
 	}
 
-	bugs := data.BuildScoreBugs([]snapshots.GameSnapshot{snap})
+	bugs := BuildScoreBugs([]snapshots.GameSnapshot{snap})
 	bug := bugs[0]
 
 	if bug.HomeRuns != 4 {
@@ -279,7 +278,7 @@ func TestBuildScoreBugs_Outs(t *testing.T) {
 				Feed: nil,
 			}
 
-			bugs := data.BuildScoreBugs([]snapshots.GameSnapshot{snap})
+			bugs := BuildScoreBugs([]snapshots.GameSnapshot{snap})
 			bug := bugs[0]
 
 			if bug.Out1 != tc.wantOut1 {
@@ -344,7 +343,7 @@ func TestBuildScoreBugs_FinalGame(t *testing.T) {
 		Feed: nil, // no feed for final games
 	}
 
-	bugs := data.BuildScoreBugs([]snapshots.GameSnapshot{snap})
+	bugs := BuildScoreBugs([]snapshots.GameSnapshot{snap})
 	bug := bugs[0]
 
 	if bug.Status != "Final" {
@@ -361,8 +360,28 @@ func TestBuildScoreBugs_FinalGame(t *testing.T) {
 	}
 }
 
-// Helper functions to reduce test boilerplate
+func TestSplitName(t *testing.T) {
+	cases := []struct {
+		testName string
+		name     string
+		desired  string
+	}{
+		{"Length 2", "Test Name", "Name"},
+		{"Length 1", "Test", "Test"},
+		{"Length 3", "Test Name Jr.", "Name Jr."},
+	}
 
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := splitName(tc.name)
+			if got != tc.desired {
+				t.Errorf("splitName(%s) = %s, want %s", tc.name, got, tc.desired)
+			}
+		})
+	}
+}
+
+// Helper functions to reduce test boilerplate
 func makeTeams(home, away string) struct {
 	Home struct {
 		Team struct {

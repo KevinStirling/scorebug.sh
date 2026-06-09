@@ -1,26 +1,37 @@
 package data
 
-func RunnerOn(on bool) string {
+const (
+	RUNNER_TRUE  = "◆"
+	RUNNER_FALSE = "◇"
+
+	OUT_TRUE  = "◉"
+	OUT_FALSE = "◯"
+
+	INNING_TOP    = "↑"
+	INNING_BOTTOM = "↓"
+)
+
+func runnerOn(on bool) string {
 	if on {
-		return "◆"
+		return RUNNER_TRUE
 	}
-	return "◇"
+	return RUNNER_FALSE
 }
 
-func SetOut(outs, pos int) string {
+func setOut(outs, pos int) string {
 	if pos <= outs {
-		return "◉"
+		return OUT_TRUE
 	}
-	return "◯"
+	return OUT_FALSE
 }
 
 func setInningArrow(state, position string) string {
 	if state == position {
 		switch state {
 		case "Top":
-			return "↑"
+			return INNING_TOP
 		case "Bottom":
-			return "↓"
+			return INNING_BOTTOM
 		default:
 			return ""
 		}
