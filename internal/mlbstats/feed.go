@@ -24,9 +24,11 @@ type Feed struct {
 		Teams struct {
 			Home struct {
 				Abbreviation string `json:"abbreviation"`
+				Name         string `json:"name"`
 			} `json:"home"`
 			Away struct {
 				Abbreviation string `json:"abbreviation"`
+				Name         string `json:"name"`
 			} `json:"away"`
 		} `json:"teams"`
 	} `json:"gameData"`
