@@ -38,12 +38,32 @@ type Feed struct {
 			CurrentInning int    `json:"currentInning"`
 			InningState   string `json:"inningState"`
 			Outs          int    `json:"outs"`
-			Teams         struct {
-				Home struct {
-					Runs int `json:"runs"`
+			Innings       []struct {
+				Num        int    `json:"num"`
+				OrdinalNum string `json:"ordinalNum"`
+				Home       struct {
+					Errors     int `json:"errors"`
+					Hits       int `json:"hits"`
+					LeftOnBase int `json:"leftOnBase"`
+					Runs       int `json:"runs"`
 				} `json:"home"`
 				Away struct {
-					Runs int `json:"runs"`
+					Errors     int `json:"errors"`
+					Hits       int `json:"hits"`
+					LeftOnBase int `json:"leftOnBase"`
+					Runs       int `json:"runs"`
+				} `json:"away"`
+			} `json:"innings"`
+			Teams struct {
+				Home struct {
+					Runs   int `json:"runs"`
+					Hits   int `json:"hits"`
+					Errors int `json:"errors"`
+				} `json:"home"`
+				Away struct {
+					Runs   int `json:"runs"`
+					Hits   int `json:"hits"`
+					Errors int `json:"errors"`
 				} `json:"away"`
 			} `json:"teams"`
 			Offense struct {
