@@ -1,23 +1,5 @@
 package mlbstats
 
-// Player is struct representation of a player in the json returned from an mlbstats api request to get a live game feed
-type Player struct {
-	Person struct {
-		Id       int    `json:"id"`
-		FullName string `json:"fullName"`
-	} `json:"person"`
-	Stats struct {
-		Pitching struct {
-			PitchesThrown int `json:"pitchesThrown"`
-		} `json:"pitching"`
-	} `json:"stats"`
-	SeasonStats struct {
-		Batting struct {
-			Avg string `json:"avg"`
-		} `json:"batting"`
-	} `json:"seasonStats"`
-}
-
 // Feed is the struct representation of the json returned from an mlbstats api request to get a live game feed
 type Feed struct {
 	GameData struct {
