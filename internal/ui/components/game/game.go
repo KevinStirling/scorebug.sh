@@ -51,7 +51,7 @@ func (m Model) renderContent(width int) string {
 		return ""
 	}
 	header := m.game.Bug.Feed.GameData.Teams.Away.Name + " @ " + m.game.Bug.Feed.GameData.Teams.Home.Name
-	linescore := m.buildLineScore()
+	linescore := lipgloss.NewStyle().Margin(1, 0, 0, 0).Render(m.buildLineScore())
 
 	content := lipgloss.JoinVertical(lipgloss.Center, header, linescore)
 
