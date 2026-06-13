@@ -39,7 +39,7 @@ archives:
         formats: ['zip']
 
 changelog:
-  disable: false
+  disable: true
 
 release:
   github:
