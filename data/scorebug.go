@@ -86,8 +86,6 @@ func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
 	return out
 }
 
-// func playerKey(id int) string { return fmt.Sprintf("ID%d", id) }
-
 func setRunners(f mlbstats.Feed, bug *ScoreBug) {
 	offense := f.LiveData.Linescore.Offense
 
@@ -111,7 +109,6 @@ func setCurrentBP(f mlbstats.Feed, bug *ScoreBug) {
 
 	bug.BatterName, bug.PitcherName = splitName(b.FullName), splitName(p.FullName)
 
-	// keyB, keyP := playerKey(b.Id), playerKey(p.Id)
 	keyB, keyP := mlbstats.FormatPlayerKey(b.Id), mlbstats.FormatPlayerKey(p.Id)
 
 	teams := []map[string]mlbstats.Player{f.LiveData.Boxscore.Teams.Home.Players, f.LiveData.Boxscore.Teams.Away.Players}

@@ -44,8 +44,7 @@ type Model struct {
 	Keys      ScheduleKeyMap
 	ActiveTab int
 
-	// selectedLink is the Link of the currently selected game, used to
-	// re-emit a GameSelectedMsg with fresh data on each refresh.
+	// used to re-emit a GameSelectedMsg with fresh data on each refresh.
 	selectedLink string
 }
 

@@ -11,6 +11,7 @@ import (
 type Pitcher struct {
 	Name       string
 	PitchHand  string
+	Position   string
 	Number     string
 	WinLoss    string
 	Era        string
@@ -47,7 +48,7 @@ func (m Model) renderMatchup() string {
 
 	pitcherRows := [][]string{
 		{matchup.Pitcher.Name, matchup.Pitcher.StrikeOuts, "K"},
-		{matchup.Pitcher.PitchHand + "HP #" + matchup.Pitcher.Number, matchup.Pitcher.Era, "ERA"},
+		{fmt.Sprintf("%s #%s (%s)", matchup.Pitcher.Position, matchup.Pitcher.Number, matchup.Pitcher.PitchHand), matchup.Pitcher.Era, "ERA"},
 		{"", matchup.Pitcher.WinLoss, "W/L"},
 		{"", matchup.Pitcher.Whip, "WHIP"},
 	}
@@ -80,7 +81,7 @@ func (m Model) renderMatchup() string {
 
 	batterRows := [][]string{
 		{matchup.Batter.Avg, "AVG", matchup.Batter.Name},
-		{matchup.Batter.Ops, "OPS", matchup.Batter.Position + " #" + matchup.Batter.Number + " (" + matchup.Batter.BatSide + ")"},
+		{matchup.Batter.Ops, "OPS", fmt.Sprintf("%s #%s (%s)", matchup.Batter.Position, matchup.Batter.Number, matchup.Batter.BatSide)},
 		{matchup.Batter.Rbi, "RBI"},
 		{matchup.Batter.HomeRuns, "HR"},
 	}
@@ -126,6 +127,7 @@ func (m Model) buildMatchup() MatchUp {
 			Era:        pitcher.SeasonStats.Pitching.Era,
 			StrikeOuts: strconv.Itoa(pitcher.SeasonStats.Pitching.StrikeOuts),
 			Whip:       pitcher.SeasonStats.Pitching.Whip,
+			Position:   pitcher.Position.Abbreviation,
 		}
 	}
 
