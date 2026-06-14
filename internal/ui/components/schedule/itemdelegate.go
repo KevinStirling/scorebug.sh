@@ -13,7 +13,7 @@ import (
 type scorebugDelegate struct{}
 
 func (d scorebugDelegate) Height() int                               { return scorebug.SB_HEIGHT }
-func (d scorebugDelegate) Spacing() int                              { return scorebug.SB_MARGIN }
+func (d scorebugDelegate) Spacing() int                              { return 0 }
 func (d scorebugDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 
 func (d scorebugDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {

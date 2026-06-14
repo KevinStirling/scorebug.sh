@@ -38,3 +38,14 @@ func setInningArrow(state, position string) string {
 	}
 	return ""
 }
+
+func RenderInningState(state string) string {
+	switch state {
+	case "Top":
+		return INNING_TOP
+	case "Bottom":
+		return INNING_BOTTOM
+	default:
+		return "-"
+	}
+}

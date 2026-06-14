@@ -20,14 +20,12 @@ func Build(client interface {
 		for _, g := range d.Games {
 			snap := GameSnapshot{Game: g}
 
-			if g.Status.AbstractGameState == "Live" {
-				feed, err := client.GameFeed(g.Link)
-				if err != nil {
-					log.Default().Print("ERROR failed to retrieve game feed")
-					return nil, err
-				}
-				snap.Feed = &feed
+			feed, err := client.GameFeed(g.Link)
+			if err != nil {
+				log.Default().Print("ERROR failed to retrieve game feed")
+				return nil, err
 			}
+			snap.Feed = &feed
 			out = append(out, snap)
 		}
 	}

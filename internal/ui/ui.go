@@ -9,6 +9,7 @@ import (
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/game"
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/header"
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/schedule"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/scorebug"
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/theme"
 )
 
@@ -37,14 +38,15 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) layout() Model {
 	m.help.SetWidth(m.width)
-	// add header here, and swap schedule.Keys with context aware keys
-	chrome := lipgloss.Height(theme.MainView.Render(m.header.Render())) + lipgloss.Height(m.help.View(m.schedule.Keys))
+	// TODO swap schedule.Keys with context aware keys
+	headerH := lipgloss.Height(theme.MainView.Render(m.header.Render()))
+	helpH := lipgloss.Height(m.help.View(m.schedule.Keys))
 
-	bodyH := m.height - chrome
-	leftW := m.width / 2
+	bodyH := m.height - helpH
+	leftW := scorebug.SB_WIDTH
 	rightW := m.width - leftW
 
-	m.schedule.SetSize(leftW, bodyH)
+	m.schedule.SetSize(leftW, bodyH-headerH)
 	m.game.SetSize(rightW, bodyH)
 	return m
 }
@@ -78,11 +80,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() tea.View {
-	header := lipgloss.JoinHorizontal(lipgloss.Top, m.header.Render())
-	body := lipgloss.JoinHorizontal(lipgloss.Top, m.schedule.View(), m.game.View())
-	main := lipgloss.JoinVertical(lipgloss.Left, header, body)
+	left := lipgloss.JoinVertical(lipgloss.Left, m.header.Render(), m.schedule.View())
+	body := lipgloss.JoinHorizontal(lipgloss.Top, left, m.game.View())
 	v := tea.NewView(lipgloss.JoinVertical(lipgloss.Left,
-		main, m.help.View(m.schedule.Keys)))
+		body, m.help.View(m.schedule.Keys)))
 	v.AltScreen = true
 	return v
 }

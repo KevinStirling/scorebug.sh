@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/KevinStirling/scorebug.sh/internal/mlbstats"
@@ -38,6 +37,8 @@ type ScoreBug struct {
 	BatterAvg   string
 	PitcherName string
 	PitchCount  int
+
+	Feed mlbstats.Feed
 }
 
 func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
@@ -78,13 +79,12 @@ func BuildScoreBugs(snaps []snapshots.GameSnapshot) []ScoreBug {
 
 			setRunners(feed, &bug)
 			setCurrentBP(feed, &bug)
+			bug.Feed = *s.Feed
 		}
 		out = append(out, bug)
 	}
 	return out
 }
-
-func playerKey(id int) string { return fmt.Sprintf("ID%d", id) }
 
 func setRunners(f mlbstats.Feed, bug *ScoreBug) {
 	offense := f.LiveData.Linescore.Offense
@@ -109,12 +109,12 @@ func setCurrentBP(f mlbstats.Feed, bug *ScoreBug) {
 
 	bug.BatterName, bug.PitcherName = splitName(b.FullName), splitName(p.FullName)
 
-	keyB, keyP := playerKey(b.Id), playerKey(p.Id)
+	keyB, keyP := mlbstats.FormatPlayerKey(b.Id), mlbstats.FormatPlayerKey(p.Id)
 
 	teams := []map[string]mlbstats.Player{f.LiveData.Boxscore.Teams.Home.Players, f.LiveData.Boxscore.Teams.Away.Players}
 
 	for _, pm := range teams {
-		if pl, ok := pm[keyB]; ok {
+		if pl, ok := pm[keyB.String()]; ok {
 			if pl.SeasonStats.Batting.Avg != "" {
 				bug.BatterAvg = pl.SeasonStats.Batting.Avg
 				break
@@ -123,7 +123,7 @@ func setCurrentBP(f mlbstats.Feed, bug *ScoreBug) {
 	}
 
 	for _, pm := range teams {
-		if pl, ok := pm[keyP]; ok {
+		if pl, ok := pm[keyP.String()]; ok {
 			if pl.Stats.Pitching.PitchesThrown != 0 {
 				bug.PitchCount = pl.Stats.Pitching.PitchesThrown
 				break
