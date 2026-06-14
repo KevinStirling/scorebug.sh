@@ -76,6 +76,14 @@ type Feed struct {
 						Id       int    `json:"id"`
 						FullName string `json:"fullName"`
 					} `json:"pitcher"`
+					Batside struct {
+						Code        string `json:"code"`
+						Description string `json:"description"`
+					} `json:"batside"`
+					PitchHand struct {
+						Code        string `json:"code"`
+						Description string `json:"description"`
+					} `json:"pitchHand"`
 				} `json:"matchUp"`
 				RunnerIndex []int `json:"runnerIndex"`
 			} `json:"currentPlay"`
@@ -91,4 +99,19 @@ type Feed struct {
 			} `json:"teams"`
 		} `json:"boxscore"`
 	} `json:"liveData"`
+}
+
+func (f Feed) Player(id int) (Player, bool) {
+	pKey := FormatPlayerKey(id)
+	teams := []map[string]Player{
+		f.LiveData.Boxscore.Teams.Home.Players,
+		f.LiveData.Boxscore.Teams.Away.Players,
+	}
+
+	for _, players := range teams {
+		if p, ok := players[pKey.String()]; ok {
+			return p, true
+		}
+	}
+	return Player{}, false
 }

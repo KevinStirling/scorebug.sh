@@ -43,6 +43,10 @@ type Model struct {
 	tabs      []string
 	Keys      ScheduleKeyMap
 	ActiveTab int
+
+	// selectedLink is the Link of the currently selected game, used to
+	// re-emit a GameSelectedMsg with fresh data on each refresh.
+	selectedLink string
 }
 
 func New(client ScheduleClient) Model {
@@ -75,8 +79,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case scorebugMsg:
 		m.games = msg
 		m.err = nil
-		cmd := m.list.SetItems(buildTab(msg, m.ActiveTab))
-		return m, cmd
+		cmds := []tea.Cmd{m.list.SetItems(buildTab(msg, m.ActiveTab))}
+		// Re-emit the selected game with fresh data so the detail view
+		// updates on each refresh, not just on manual selection.
+		if cmd := m.refreshSelected(); cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		return m, tea.Batch(cmds...)
 	case errMsg:
 		m.err = msg.err
 		log.Error("schedule", "error", m.err)
@@ -99,6 +108,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case key.Matches(msg, m.Keys.Select):
 			item, ok := m.list.SelectedItem().(ScorebugItem)
 			if ok {
+				m.selectedLink = item.bug.Link
 				return m, m.itemSelected(item)
 			}
 
@@ -129,6 +139,23 @@ func (m Model) itemSelected(item ScorebugItem) tea.Cmd {
 	return func() tea.Msg {
 		return GameSelectedMsg{Bug: item.bug}
 	}
+}
+
+// refreshSelected returns a cmd that re-emits a GameSelectedMsg for the
+// currently selected game using the latest fetched data, or nil if no game
+// is selected or it is no longer present.
+func (m Model) refreshSelected() tea.Cmd {
+	if m.selectedLink == "" {
+		return nil
+	}
+	for _, bug := range m.games {
+		if bug.Link == m.selectedLink {
+			return func() tea.Msg {
+				return GameSelectedMsg{Bug: bug}
+			}
+		}
+	}
+	return nil
 }
 
 func (m Model) IsFiltering() bool { return m.list.SettingFilter() }
