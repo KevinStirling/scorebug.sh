@@ -14,11 +14,13 @@ import (
 type Model struct {
 	game     *schedule.GameSelectedMsg
 	viewport viewport.Model
+	plays    PlayFeed
 }
 
 func New() Model {
 	return Model{
 		viewport: viewport.New(),
+		plays:    NewPlayfeed(),
 	}
 }
 
@@ -42,9 +44,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case schedule.GameSelectedMsg:
 		m.game = &msg
 	}
+	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	m.viewport, cmd = m.viewport.Update(msg)
-	return m, cmd
+	cmds = append(cmds, cmd)
+
+	m.plays, cmd = m.plays.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) renderContent(width int) string {
@@ -54,8 +62,9 @@ func (m Model) renderContent(width int) string {
 	header := m.game.Bug.Feed.GameData.Teams.Away.Name + " @ " + m.game.Bug.Feed.GameData.Teams.Home.Name
 	linescore := lipgloss.NewStyle().Margin(1, 0, 0, 0).Render(m.buildLineScore())
 	matchup := lipgloss.NewStyle().MarginTop(1).Render(m.renderMatchup())
+	plays := lipgloss.NewStyle().MarginTop(1).Render(m.plays.View())
 
-	content := lipgloss.JoinVertical(lipgloss.Center, linescore, matchup)
+	content := lipgloss.JoinVertical(lipgloss.Center, linescore, matchup, plays)
 
 	all := lipgloss.JoinVertical(lipgloss.Center, header, content)
 

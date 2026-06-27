@@ -61,6 +61,14 @@ type Feed struct {
 			} `json:"offense"`
 		} `json:"linescore"`
 		Plays struct {
+			AllPlays []struct {
+				Type   string `json:"type"`
+				Result struct {
+					Description string `json:"description"`
+					IsOut       bool   `json:"isOut"`
+					HasReview   bool   `json:"hasReview"`
+				} `json:"result"`
+			} `json:"allPlays"`
 			CurrentPlay struct {
 				Count struct {
 					Balls   int `json:"balls"`
