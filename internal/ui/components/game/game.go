@@ -8,17 +8,16 @@ import (
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
 	"github.com/KevinStirling/scorebug.sh/data"
+	"github.com/KevinStirling/scorebug.sh/internal/ui/components/playfeed"
 	"github.com/KevinStirling/scorebug.sh/internal/ui/components/schedule"
 )
 
-// playFeedTopMargin is the blank line above the play feed (its MarginTop) that
-// must be subtracted from the list's available height.
 const playFeedTopMargin = 1
 
 type Model struct {
 	game     *schedule.GameSelectedMsg
 	viewport viewport.Model
-	plays    PlayFeed
+	plays    playfeed.Model
 	width    int
 	height   int
 }
@@ -26,7 +25,7 @@ type Model struct {
 func New() Model {
 	return Model{
 		viewport: viewport.New(),
-		plays:    NewPlayfeed(),
+		plays:    playfeed.New(),
 	}
 }
 
@@ -48,12 +47,9 @@ func (m *Model) resizePlays() {
 	if m.game == nil {
 		return
 	}
-	// The viewport's usable content height is its height minus the container
-	// frame; the content above the feed and the feed's top margin take the rest.
 	avail := m.height - containerStyle.GetVerticalFrameSize()
 	used := lipgloss.Height(m.renderTopContent()) + playFeedTopMargin
-	listHeight := max(avail-used, playRowHeight)
-	m.plays.SetSize(m.width, listHeight)
+	m.plays.SetSize(m.width, avail-used)
 }
 
 func (m Model) View() string {
@@ -66,8 +62,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case schedule.GameSelectedMsg:
 		m.game = &msg
-		// Now that the game (and thus the content above the feed) is known,
-		// recompute the feed height against the stored window size.
 		m.resizePlays()
 	}
 	var cmds []tea.Cmd
@@ -91,8 +85,7 @@ func (m Model) renderContent(width int) string {
 	return headerStyle.Width(width).Render(all)
 }
 
-// renderTopContent renders everything above the play feed. It's measured by
-// resizePlays to size the feed, so both must stack the same pieces.
+// renderTopContent renders everything above the play feed.
 func (m Model) renderTopContent() string {
 	header := m.game.Bug.Feed.GameData.Teams.Away.Name + " @ " + m.game.Bug.Feed.GameData.Teams.Home.Name
 	linescore := lipgloss.NewStyle().Margin(1, 0, 0, 0).Render(m.buildLineScore())
