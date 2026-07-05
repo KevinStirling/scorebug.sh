@@ -1,5 +1,7 @@
 package data
 
+import "strings"
+
 const (
 	RUNNER_TRUE  = "◆"
 	RUNNER_FALSE = "◇"
@@ -40,10 +42,11 @@ func setInningArrow(state, position string) string {
 }
 
 func RenderInningState(state string) string {
+	state = strings.ToLower(state)
 	switch state {
-	case "Top":
+	case "top":
 		return INNING_TOP
-	case "Bottom":
+	case "bottom":
 		return INNING_BOTTOM
 	default:
 		return "-"
