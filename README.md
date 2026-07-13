@@ -1,7 +1,5 @@
 # scorebug.sh
-[![Go](https://github.com/KevinStirling/scorebug.sh/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/KevinStirling/scorebug.sh/actions/workflows/go.yml)
-
-[![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens)
+[![Go](https://github.com/KevinStirling/scorebug.sh/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/KevinStirling/scorebug.sh/actions/workflows/go.yml) [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens)
 
 Live MLB scores in your terminal
 
