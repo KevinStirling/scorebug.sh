@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/KevinStirling/scorebug.sh/compare/v0.3.1...v0.3.2) (2026-07-13)
+
+
+### Chores
+
+* **readme:** formatting ([819c57c](https://github.com/KevinStirling/scorebug.sh/commit/819c57c9a0ad5c16feaa848260ce56ca875fea28))
+
 ## [0.3.1](https://github.com/KevinStirling/scorebug.sh/compare/v0.1.1...v0.3.1) (2026-07-13)
 
 
