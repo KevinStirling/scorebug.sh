@@ -85,7 +85,7 @@ scoops:
       - "config.toml"
     pre_install: ["Write-Host 'Running preinstall command'"]
     post_install: ["Write-Host 'Running postinstall command'"]
-    depends: ["git", "foo"]
+    depends: ["git"]
     shortcuts: [["scorebug.exe", "scorebug"]]
     goamd64: v3
 
